@@ -204,12 +204,17 @@ public class CourseServiceImpl implements CourseService {
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + courseId));
 
         // Verify tutor owns this course
-        if (!course.getTutor().getId().equals(tutorId)) {
-            throw new AccessDeniedException("You don't have permission to delete this course");
+        if (tutorId != null) {
+            // Verify tutor owns this course
+            if (!course.getTutor().getId().equals(tutorId)) {
+                throw new AccessDeniedException("You don't have permission to delete this course");
+            }
         }
 
         // Check if course is deletable
-        if (course.getStatus() != Course.Status.DRAFT && course.getStatus() != Course.Status.REJECTED) {
+        if (tutorId != null &&
+                course.getStatus() != Course.Status.DRAFT &&
+                course.getStatus() != Course.Status.REJECTED) {
             throw new BadRequestException("Cannot delete a course that is pending approval or approved");
         }
 
