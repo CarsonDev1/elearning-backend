@@ -1,5 +1,7 @@
 package com.jplearning.controller;
 
+import com.jplearning.dto.request.ProfileUpdateRequest;
+import com.jplearning.dto.request.TutorProfileUpdateRequest;
 import com.jplearning.dto.response.UserResponse;
 import com.jplearning.exception.BadRequestException;
 import com.jplearning.security.services.UserDetailsImpl;
@@ -7,11 +9,12 @@ import com.jplearning.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.security.core.Authentication;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -54,6 +57,30 @@ public class UserController {
         }
     }
 
+    @PutMapping("/me/profile")
+    @Operation(
+            summary = "Update student profile",
+            description = "Update profile for student",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<UserResponse> updateStudentProfile(@Valid @RequestBody ProfileUpdateRequest request) {
+        Long userId = getCurrentUserId();
+        return ResponseEntity.ok(userService.updateStudentProfile(userId, request));
+    }
+
+    @PutMapping("/me/tutor-profile")
+    @Operation(
+            summary = "Update tutor profile",
+            description = "Update profile for tutor including education and experience",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PreAuthorize("hasRole('TUTOR')")
+    public ResponseEntity<UserResponse> updateTutorProfile(@Valid @RequestBody TutorProfileUpdateRequest request) {
+        Long userId = getCurrentUserId();
+        return ResponseEntity.ok(userService.updateTutorProfile(userId, request));
+    }
+
     @PostMapping(value = "/{userId}/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Update user avatar by ID",
@@ -69,6 +96,56 @@ public class UserController {
         } catch (IOException e) {
             throw new BadRequestException("Failed to upload avatar: " + e.getMessage());
         }
+    }
+
+    @PutMapping("/{userId}/profile")
+    @Operation(
+            summary = "Update user profile by ID",
+            description = "Admin can update profile for any student",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> updateUserProfile(
+            @PathVariable Long userId,
+            @Valid @RequestBody ProfileUpdateRequest request) {
+        return ResponseEntity.ok(userService.updateStudentProfile(userId, request));
+    }
+
+    @PutMapping("/{userId}/tutor-profile")
+    @Operation(
+            summary = "Update tutor profile by ID",
+            description = "Admin can update profile for any tutor",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> updateTutorProfileById(
+            @PathVariable Long userId,
+            @Valid @RequestBody TutorProfileUpdateRequest request) {
+        return ResponseEntity.ok(userService.updateTutorProfile(userId, request));
+    }
+
+    @GetMapping("/{userId}")
+    @Operation(
+            summary = "Get user by ID",
+            description = "Admin can get details of any user",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> getUserById(@PathVariable Long userId) {
+        return ResponseEntity.ok(userService.getUserById(userId));
+    }
+
+    @PutMapping("/{userId}/status")
+    @Operation(
+            summary = "Enable/disable user",
+            description = "Admin can enable or disable any user",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> setUserStatus(
+            @PathVariable Long userId,
+            @RequestParam boolean enabled) {
+        return ResponseEntity.ok(userService.setUserStatus(userId, enabled));
     }
 
     private Long getCurrentUserId() {

@@ -1,23 +1,18 @@
 package com.jplearning.service.impl;
 
-import com.jplearning.dto.request.LoginRequest;
-import com.jplearning.dto.request.RegisterStudentRequest;
-import com.jplearning.dto.request.RegisterTutorRequest;
+import com.jplearning.dto.request.*;
 import com.jplearning.dto.response.JwtResponse;
 import com.jplearning.dto.response.MessageResponse;
 import com.jplearning.dto.response.UserResponse;
-import com.jplearning.entity.Role;
-import com.jplearning.entity.Student;
-import com.jplearning.entity.Tutor;
+import com.jplearning.entity.*;
 import com.jplearning.exception.BadRequestException;
+import com.jplearning.exception.ResourceNotFoundException;
 import com.jplearning.mapper.UserMapper;
-import com.jplearning.repository.RoleRepository;
-import com.jplearning.repository.StudentRepository;
-import com.jplearning.repository.TutorRepository;
-import com.jplearning.repository.UserRepository;
+import com.jplearning.repository.*;
 import com.jplearning.security.jwt.JwtUtils;
 import com.jplearning.security.services.UserDetailsImpl;
 import com.jplearning.service.AuthService;
+import com.jplearning.service.EmailService;
 import com.jplearning.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -28,10 +23,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.UUID;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -51,6 +46,9 @@ public class AuthServiceImpl implements AuthService {
     private RoleRepository roleRepository;
 
     @Autowired
+    private PasswordResetTokenRepository tokenRepository;
+
+    @Autowired
     private PasswordEncoder encoder;
 
     @Autowired
@@ -61,6 +59,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private EmailService emailService;
 
     @Override
     public JwtResponse authenticateUser(LoginRequest loginRequest) {
@@ -107,12 +108,24 @@ public class AuthServiceImpl implements AuthService {
         roles.add(studentRole);
         student.setRoles(roles);
 
-        // Enable the account (in a real production scenario, you might want to add email verification)
-        student.setEnabled(true);
+        // Default is not enabled until email verification
+        student.setEnabled(false);
 
-        studentRepository.save(student);
+        Student savedStudent = studentRepository.save(student);
 
-        return new MessageResponse("Student registered successfully!");
+        // Generate verification token and send email
+        String token = UUID.randomUUID().toString();
+        PasswordResetToken verificationToken = PasswordResetToken.builder()
+                .token(token)
+                .user(savedStudent)
+                .expiryDate(LocalDateTime.now().plusHours(24))
+                .build();
+        tokenRepository.save(verificationToken);
+
+        // Send verification email
+        emailService.sendVerificationEmail(savedStudent.getEmail(), token);
+
+        return new MessageResponse("Student registered successfully! Please check your email to verify your account.");
     }
 
     @Override
@@ -124,7 +137,9 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // Validate if the phone number is already in use
-        if (userRepository.existsByPhoneNumber(registerRequest.getPhoneNumber())) {
+        if (registerRequest.getPhoneNumber() != null &&
+                !registerRequest.getPhoneNumber().isEmpty() &&
+                userRepository.existsByPhoneNumber(registerRequest.getPhoneNumber())) {
             throw new BadRequestException("Error: Phone number is already in use!");
         }
 
@@ -144,11 +159,115 @@ public class AuthServiceImpl implements AuthService {
         roles.add(tutorRole);
         tutor.setRoles(roles);
 
-        // The account will be disabled until approved by admin
+        // For tutors, account is disabled until approved by admin
+        // No email verification needed before admin approval
         tutor.setEnabled(false);
 
-        tutorRepository.save(tutor);
+        Tutor savedTutor = tutorRepository.save(tutor);
 
-        return new MessageResponse("Tutor registered successfully! Your account will be reviewed by an administrator.");
+        return new MessageResponse("Tutor registration submitted! Your application will be reviewed by an administrator. " +
+                "You will receive an email notification when your application is processed.");
+    }
+
+    @Override
+    @Transactional
+    public MessageResponse forgotPassword(ForgotPasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + request.getEmail()));
+
+        // Delete any existing token for this user
+        tokenRepository.findByUser(user).ifPresent(token -> tokenRepository.delete(token));
+
+        // Generate new token
+        String token = UUID.randomUUID().toString();
+        PasswordResetToken resetToken = PasswordResetToken.builder()
+                .token(token)
+                .user(user)
+                .expiryDate(LocalDateTime.now().plusHours(1))
+                .build();
+        tokenRepository.save(resetToken);
+
+        // Send email
+        emailService.sendPasswordResetEmail(user.getEmail(), token);
+
+        return new MessageResponse("Password reset instructions have been sent to your email.");
+    }
+
+    @Override
+    @Transactional
+    public MessageResponse resetPassword(ResetPasswordRequest request) {
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new BadRequestException("Passwords do not match");
+        }
+
+        PasswordResetToken resetToken = tokenRepository.findByToken(request.getToken())
+                .orElseThrow(() -> new BadRequestException("Invalid or expired token"));
+
+        if (resetToken.isExpired()) {
+            tokenRepository.delete(resetToken);
+            throw new BadRequestException("Token has expired");
+        }
+
+        User user = resetToken.getUser();
+        user.setPassword(encoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        // Delete used token
+        tokenRepository.delete(resetToken);
+
+        return new MessageResponse("Password has been reset successfully");
+    }
+
+    @Override
+    @Transactional
+    public MessageResponse changePassword(ChangePasswordRequest request, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        // Verify current password
+        if (!encoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new BadRequestException("Current password is incorrect");
+        }
+
+        // Verify new passwords match
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new BadRequestException("New passwords do not match");
+        }
+
+        // Update password
+        user.setPassword(encoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        return new MessageResponse("Password changed successfully");
+    }
+
+    @Override
+    @Transactional
+    public MessageResponse verifyEmail(String token) {
+        PasswordResetToken verificationToken = tokenRepository.findByToken(token)
+                .orElseThrow(() -> new BadRequestException("Invalid or expired verification token"));
+
+        if (verificationToken.isExpired()) {
+            tokenRepository.delete(verificationToken);
+            throw new BadRequestException("Verification token has expired");
+        }
+
+        User user = verificationToken.getUser();
+
+        // Check if user is a Student (only students need email verification)
+        boolean isStudent = user.getRoles().stream()
+                .anyMatch(role -> role.getName() == Role.ERole.ROLE_STUDENT);
+
+        if (!isStudent) {
+            throw new BadRequestException("Invalid verification request");
+        }
+
+        user.setEnabled(true);
+        userRepository.save(user);
+
+        // Delete used token
+        tokenRepository.delete(verificationToken);
+
+        return new MessageResponse("Email verified successfully. You can now log in.");
     }
 }

@@ -44,6 +44,9 @@ public class WebSecurityConfig {
         authProvider.setUserDetailsService(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
 
+        // Ensure that account status checks are handled properly
+        authProvider.setHideUserNotFoundExceptions(false);
+
         return authProvider;
     }
 
@@ -78,6 +81,9 @@ public class WebSecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth ->
                         auth.requestMatchers("/auth/**").permitAll()
+                                .requestMatchers("/auth/verify-email").permitAll()
+                                .requestMatchers("/auth/reset-password").permitAll()
+                                .requestMatchers("/auth/forgot-password").permitAll()
                                 .requestMatchers("/courses").permitAll()
                                 .requestMatchers("/courses/search").permitAll()
                                 .requestMatchers("/api/users/**").permitAll()

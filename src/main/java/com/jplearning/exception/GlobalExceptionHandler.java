@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -67,6 +69,32 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 "Invalid username or password",
                 webRequest.getDescription(false),
                 "INVALID_CREDENTIALS"
+        );
+
+        return new ResponseEntity<>(errorDetails, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<ErrorDetails> handleDisabledException(DisabledException exception,
+                                                                WebRequest webRequest) {
+        ErrorDetails errorDetails = new ErrorDetails(
+                LocalDateTime.now(),
+                "Account is not activated. Please verify your email.",
+                webRequest.getDescription(false),
+                "ACCOUNT_DISABLED"
+        );
+
+        return new ResponseEntity<>(errorDetails, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(LockedException.class)
+    public ResponseEntity<ErrorDetails> handleLockedException(LockedException exception,
+                                                              WebRequest webRequest) {
+        ErrorDetails errorDetails = new ErrorDetails(
+                LocalDateTime.now(),
+                "Account is locked. Please contact administrator.",
+                webRequest.getDescription(false),
+                "ACCOUNT_LOCKED"
         );
 
         return new ResponseEntity<>(errorDetails, HttpStatus.UNAUTHORIZED);

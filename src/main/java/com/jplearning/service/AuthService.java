@@ -1,8 +1,6 @@
 package com.jplearning.service;
 
-import com.jplearning.dto.request.LoginRequest;
-import com.jplearning.dto.request.RegisterStudentRequest;
-import com.jplearning.dto.request.RegisterTutorRequest;
+import com.jplearning.dto.request.*;
 import com.jplearning.dto.response.JwtResponse;
 import com.jplearning.dto.response.MessageResponse;
 import com.jplearning.dto.response.UserResponse;
@@ -28,4 +26,33 @@ public interface AuthService {
      * @return registration status message
      */
     MessageResponse registerTutor(RegisterTutorRequest registerRequest);
+
+    /**
+     * Initiates the password reset process
+     * @param request contains the email address
+     * @return message response
+     */
+    MessageResponse forgotPassword(ForgotPasswordRequest request);
+
+    /**
+     * Resets the password using a token
+     * @param request contains token and new password
+     * @return message response
+     */
+    MessageResponse resetPassword(ResetPasswordRequest request);
+
+    /**
+     * Changes the password for authenticated user
+     * @param request contains current and new password
+     * @param userId ID of the user changing password
+     * @return message response
+     */
+    MessageResponse changePassword(ChangePasswordRequest request, Long userId);
+
+    /**
+     * Verifies user email with a token
+     * @param token verification token
+     * @return message response
+     */
+    MessageResponse verifyEmail(String token);
 }

@@ -2,7 +2,6 @@ package com.jplearning.security.services;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.jplearning.entity.User;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -13,7 +12,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-@AllArgsConstructor
 @Getter
 public class UserDetailsImpl implements UserDetails {
     private static final long serialVersionUID = 1L;
@@ -26,7 +24,21 @@ public class UserDetailsImpl implements UserDetails {
     @JsonIgnore
     private final String password;
 
+    private final boolean enabled;
+
     private final Collection<? extends GrantedAuthority> authorities;
+
+    public UserDetailsImpl(Long id, String username, String email, String fullName,
+                           String password, Collection<? extends GrantedAuthority> authorities,
+                           boolean enabled) {
+        this.id = id;
+        this.username = username;
+        this.email = email;
+        this.fullName = fullName;
+        this.password = password;
+        this.authorities = authorities;
+        this.enabled = enabled;
+    }
 
     public static UserDetailsImpl build(User user) {
         List<GrantedAuthority> authorities = user.getRoles().stream()
@@ -39,7 +51,8 @@ public class UserDetailsImpl implements UserDetails {
                 user.getEmail(),
                 user.getFullName(),
                 user.getPassword(),
-                authorities);
+                authorities,
+                user.isEnabled());
     }
 
     @Override
@@ -74,7 +87,7 @@ public class UserDetailsImpl implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return enabled;
     }
 
     @Override
