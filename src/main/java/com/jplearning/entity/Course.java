@@ -11,9 +11,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Entity
 @Table(name = "courses")
@@ -35,8 +33,8 @@ public class Course {
     @Column(name = "duration_in_minutes")
     private Integer durationInMinutes;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "level_id", nullable = false)
     private Level level;
 
     @Column(name = "lesson_count")
@@ -76,10 +74,6 @@ public class Course {
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Module> modules = new ArrayList<>();
-    // Enum for course level
-    public enum Level {
-        BEGINNER, INTERMEDIATE, ADVANCED, ALL_LEVELS
-    }
 
     // Enum for course status
     public enum Status {

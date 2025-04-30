@@ -11,10 +11,7 @@ import com.jplearning.entity.VoucherUsage;
 import com.jplearning.exception.BadRequestException;
 import com.jplearning.exception.ResourceNotFoundException;
 import com.jplearning.mapper.CourseMapper;
-import com.jplearning.repository.CourseComboRepository;
-import com.jplearning.repository.CourseRepository;
-import com.jplearning.repository.VoucherRepository;
-import com.jplearning.repository.VoucherUsageRepository;
+import com.jplearning.repository.*;
 import com.jplearning.service.VoucherService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -47,6 +44,9 @@ public class VoucherServiceImpl implements VoucherService {
 
     @Autowired
     private CourseMapper courseMapper;
+
+    @Autowired
+    private LevelRepository levelRepository;
 
     @Override
     @Transactional
@@ -291,7 +291,7 @@ public class VoucherServiceImpl implements VoucherService {
                     .map(course -> CourseBriefResponse.builder()
                             .id(course.getId())
                             .title(course.getTitle())
-                            .level(course.getLevel())
+                            .level(courseMapper.levelToResponse(course.getLevel()))
                             .price(course.getPrice())
                             .thumbnailUrl(course.getThumbnailUrl())
                             .tutor(courseMapper.tutorToBriefResponse(course.getTutor()))

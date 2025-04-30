@@ -123,6 +123,23 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public UserResponse blockUser(Long userId, boolean blocked) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        // Cập nhật trạng thái blocked
+        user.setBlocked(blocked);
+
+        // Lưu vào database
+        User updatedUser = userRepository.save(user);
+
+        // Trả về response
+        
+        return getUserDetails(updatedUser);
+    }
+
+    @Override
+    @Transactional
     public UserResponse updateAvatar(Long userId, MultipartFile file) throws IOException {
         // Validate current user is updating their own avatar or is an admin
         validateUserAccess(userId);
@@ -322,6 +339,10 @@ public class UserServiceImpl implements UserService {
                 .phoneNumber(user.getPhoneNumber())
                 .avatarUrl(user.getAvatarUrl())
                 .roles(roles)
+                .enabled(user.isEnabled())
+                .blocked(user.isBlocked())
+                .blockReason(user.getBlockReason())
+                .blockedAt(user.getBlockedAt())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt());
 

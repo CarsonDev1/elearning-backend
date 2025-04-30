@@ -1,6 +1,5 @@
 package com.jplearning.dto.response;
 
-import com.jplearning.entity.Course;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,23 +11,20 @@ import java.util.List;
 
 @Data
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
-public class CourseResponse {
+@AllArgsConstructor
+public class ComboResponse {
     private Long id;
     private String title;
     private String description;
-    private Integer durationInMinutes;
-    private LevelResponse level;
-    private Integer lessonCount;
-    private String courseOverview;
-    private String courseContent;
-    private BigDecimal price;
+    private BigDecimal originalPrice;
+    private BigDecimal discountPrice;
+    private Integer discountPercentage;
     private String thumbnailUrl;
-    private String includesDescription;
-    private TutorBriefResponse tutor;
-    private Course.Status status;
+    private boolean isActive;
+    private List<CourseBriefResponse> courses;
+    private LocalDateTime validUntil;
+    private Integer accessPeriodMonths;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private List<ModuleResponse> modules;
 }

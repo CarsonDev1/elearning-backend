@@ -15,7 +15,7 @@ import java.math.BigDecimal;
 public class CourseBriefResponse {
     private Long id;
     private String title;
-    private Course.Level level;
+    private LevelResponse level;
     private BigDecimal price;
     private String thumbnailUrl;
     private TutorBriefResponse tutor;

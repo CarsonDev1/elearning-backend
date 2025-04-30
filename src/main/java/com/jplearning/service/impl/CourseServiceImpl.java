@@ -57,6 +57,9 @@ public class CourseServiceImpl implements CourseService {
     @Autowired
     private CloudinaryService cloudinaryService;
 
+    @Autowired
+    private LevelRepository levelRepository;
+
 //    @Override
     @Transactional
     public CourseResponse createCourse(CourseRequest request, Long tutorId) {
@@ -64,9 +67,13 @@ public class CourseServiceImpl implements CourseService {
         Tutor tutor = tutorRepository.findById(tutorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tutor not found with id: " + tutorId));
 
+        Level level = levelRepository.findById(request.getLevelId())
+                .orElseThrow(() -> new ResourceNotFoundException("Level not found with id: " + request.getLevelId()));
+
         // Map request to entity
         Course course = courseMapper.requestToCourse(request);
         course.setTutor(tutor);
+        course.setLevel(level);
         course.setStatus(Course.Status.DRAFT);
 
         // Initialize modules list if it's null
@@ -170,6 +177,13 @@ public class CourseServiceImpl implements CourseService {
         // Check if course is editable
         if (course.getStatus() != Course.Status.DRAFT && course.getStatus() != Course.Status.REJECTED) {
             throw new BadRequestException("Cannot edit a course that is pending approval or approved");
+        }
+
+        // Update level if it's changed
+        if (!course.getLevel().getId().equals(request.getLevelId())) {
+            Level level = levelRepository.findById(request.getLevelId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Level not found with id: " + request.getLevelId()));
+            course.setLevel(level);
         }
 
         // Update course with request data

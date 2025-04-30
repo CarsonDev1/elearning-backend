@@ -88,6 +88,8 @@ public class WebSecurityConfig {
                                 .requestMatchers("/courses/search").permitAll()
                                 .requestMatchers("/api/users/**").permitAll()
                                 .requestMatchers("/courses/{id}").permitAll()
+                                .requestMatchers("/combos").permitAll()
+                                .requestMatchers("/combos/{id}").permitAll()
                                 .requestMatchers("/api-docs/**").permitAll()
                                 .requestMatchers("/swagger-ui/**").permitAll()
                                 .requestMatchers("/swagger-ui.html").permitAll()

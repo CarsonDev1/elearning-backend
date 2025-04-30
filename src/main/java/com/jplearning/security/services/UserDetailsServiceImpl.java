@@ -5,6 +5,7 @@ import com.jplearning.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -24,6 +25,14 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         // Check if account is enabled (email verified)
         if (!user.isEnabled()) {
             throw new DisabledException("Account is not activated. Please verify your email.");
+        }
+
+        // Check if account is blocked
+        if (user.isBlocked()) {
+            String reason = user.getBlockReason() != null && !user.getBlockReason().isEmpty()
+                    ? " Reason: " + user.getBlockReason()
+                    : "";
+            throw new LockedException("Your account has been blocked." + reason + " Please contact administrator.");
         }
 
         return UserDetailsImpl.build(user);

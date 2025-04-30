@@ -47,6 +47,8 @@ public class UserController {
             description = "Upload a new avatar image for the current user",
             security = @SecurityRequirement(name = "bearerAuth")
     )
+
+
     @PreAuthorize("hasRole('STUDENT') or hasRole('TUTOR') or hasRole('ADMIN')")
     public ResponseEntity<UserResponse> updateAvatar(@RequestParam("file") MultipartFile file) {
         try {
@@ -152,5 +154,18 @@ public class UserController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         return userDetails.getId();
+    }
+
+    @PutMapping("/{userId}/block")
+    @Operation(
+            summary = "Block/unblock user",
+            description = "Admin can block or unblock any user",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> blockUser(
+            @PathVariable Long userId,
+            @RequestParam boolean blocked) {
+        return ResponseEntity.ok(userService.blockUser(userId, blocked));
     }
 }

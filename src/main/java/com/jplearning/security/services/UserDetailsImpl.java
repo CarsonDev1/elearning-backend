@@ -25,12 +25,13 @@ public class UserDetailsImpl implements UserDetails {
     private final String password;
 
     private final boolean enabled;
+    private final boolean blocked;
 
     private final Collection<? extends GrantedAuthority> authorities;
 
     public UserDetailsImpl(Long id, String username, String email, String fullName,
                            String password, Collection<? extends GrantedAuthority> authorities,
-                           boolean enabled) {
+                           boolean enabled, boolean blocked) {
         this.id = id;
         this.username = username;
         this.email = email;
@@ -38,6 +39,7 @@ public class UserDetailsImpl implements UserDetails {
         this.password = password;
         this.authorities = authorities;
         this.enabled = enabled;
+        this.blocked = blocked;
     }
 
     public static UserDetailsImpl build(User user) {
@@ -52,7 +54,8 @@ public class UserDetailsImpl implements UserDetails {
                 user.getFullName(),
                 user.getPassword(),
                 authorities,
-                user.isEnabled());
+                user.isEnabled(),
+                user.isBlocked());
     }
 
     @Override
@@ -77,7 +80,7 @@ public class UserDetailsImpl implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return !blocked;
     }
 
     @Override

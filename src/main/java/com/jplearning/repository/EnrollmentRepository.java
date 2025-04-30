@@ -2,6 +2,7 @@ package com.jplearning.repository;
 
 import com.jplearning.entity.Course;
 import com.jplearning.entity.Enrollment;
+import com.jplearning.entity.Payment;
 import com.jplearning.entity.Student;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,4 +31,9 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
     @Query("SELECT COUNT(e) FROM Enrollment e WHERE e.combo.id = :comboId")
     Long countByComboId(Long comboId);
+
+    @Query("SELECT e FROM Enrollment e WHERE e.course.id = :courseId")
+    List<Enrollment> findByCourseId(Long courseId);
+
+    List<Enrollment> findByPayment(Payment payment);
 }

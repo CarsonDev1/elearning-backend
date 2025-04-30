@@ -1,6 +1,5 @@
 package com.jplearning.dto.request;
 
-import com.jplearning.entity.Course;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -22,8 +21,8 @@ public class CourseRequest {
 
     private Integer durationInMinutes;
 
-    @NotNull(message = "Course level is required")
-    private Course.Level level;
+    @NotNull(message = "Level ID is required")
+    private Long levelId;
 
     @Size(max = 5000, message = "Course overview must be less than 5000 characters")
     private String courseOverview;

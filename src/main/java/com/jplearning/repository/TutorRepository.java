@@ -9,4 +9,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface TutorRepository extends JpaRepository<Tutor, Long> {
     Page<Tutor> findByEnabled(boolean enabled, Pageable pageable);
+
+    long countByEnabled(boolean enabled);
 }

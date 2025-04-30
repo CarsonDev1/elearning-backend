@@ -46,6 +46,15 @@ public class User {
     @Column(nullable = false)
     private boolean enabled = false;
 
+    @Column(name = "blocked", nullable = false)
+    private boolean blocked = false;
+
+    @Column(name = "block_reason")
+    private String blockReason;
+
+    @Column(name = "blocked_at")
+    private LocalDateTime blockedAt;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),

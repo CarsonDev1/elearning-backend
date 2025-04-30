@@ -53,4 +53,6 @@ public interface UserService {
      * @return Updated user details
      */
     UserResponse setUserStatus(Long userId, boolean enabled);
+
+    UserResponse blockUser(Long userId, boolean blocked);
 }

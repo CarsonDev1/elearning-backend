@@ -20,6 +20,10 @@ public class UserResponse {
     private String avatarUrl;
     private Set<String> roles;
     private String userType; // "STUDENT", "TUTOR", or "ADMIN"
+    private boolean enabled;
+    private boolean blocked;
+    private String blockReason;
+    private LocalDateTime blockedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
