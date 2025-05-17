@@ -46,6 +46,16 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     @Autowired
     private CloudinaryService cloudinaryService;
 
+
+    @Override
+    public boolean isStudentEnrolledInCourse(Long studentId, Long courseId) {
+        // Tìm kiếm enrollment dựa trên studentId và courseId
+        Optional<Enrollment> enrollment = enrollmentRepository.findByStudentIdAndCourseId(studentId, courseId);
+
+        // Trả về true nếu enrollment tồn tại
+        return enrollment.isPresent();
+    }
+
     @Override
     @Transactional
     public EnrollmentResponse enrollStudentInCourse(Long studentId, Long courseId, Payment payment) {

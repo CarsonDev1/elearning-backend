@@ -50,4 +50,6 @@ public interface EnrollmentService {
      * @return URL of the generated certificate
      */
     String generateCertificate(Long enrollmentId);
+
+    boolean isStudentEnrolledInCourse(Long studentId, Long courseId);
 }
