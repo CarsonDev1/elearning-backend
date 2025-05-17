@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 public interface CourseService {
     /**
@@ -26,6 +27,15 @@ public interface CourseService {
      * @return Course response
      */
     CourseResponse getCourseById(Long courseId);
+
+    /**
+     * Get a course by ID with enrollment status
+     *
+     * @param courseId Course ID
+     * @param studentId Student ID to check enrollment status
+     * @return Course response with enrollment status
+     */
+    CourseResponse getCourseWithEnrollmentStatus(Long courseId, Long studentId);
 
     /**
      * Update an existing course
@@ -89,6 +99,15 @@ public interface CourseService {
     Page<CourseResponse> getApprovedCourses(Pageable pageable);
 
     /**
+     * Get all approved courses with enrollment status for a student
+     *
+     * @param pageable Pagination information
+     * @param studentId Student ID to check enrollment status
+     * @return Page of approved courses with enrollment status
+     */
+    Page<CourseResponse> getApprovedCoursesWithEnrollmentStatus(Pageable pageable, Long studentId);
+
+    /**
      * Search courses by title
      *
      * @param title Title to search for
@@ -96,6 +115,16 @@ public interface CourseService {
      * @return Page of matching courses
      */
     Page<CourseResponse> searchCoursesByTitle(String title, Pageable pageable);
+
+    /**
+     * Search courses by title with enrollment status
+     *
+     * @param title Title to search for
+     * @param pageable Pagination information
+     * @param studentId Student ID to check enrollment status
+     * @return Page of matching courses with enrollment status
+     */
+    Page<CourseResponse> searchCoursesByTitleWithEnrollmentStatus(String title, Pageable pageable, Long studentId);
 
     /**
      * Upload thumbnail for a course

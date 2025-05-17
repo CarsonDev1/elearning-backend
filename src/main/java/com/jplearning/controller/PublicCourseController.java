@@ -43,6 +43,15 @@ public class PublicCourseController {
                 Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
+        // Lấy id của học viên hiện tại (nếu đã đăng nhập)
+        Long studentId = getCurrentStudentId();
+
+        // Nếu đã đăng nhập, trả về danh sách với trạng thái đăng ký
+        if (studentId != null) {
+            return ResponseEntity.ok(courseService.getApprovedCoursesWithEnrollmentStatus(pageable, studentId));
+        }
+
+        // Nếu chưa đăng nhập, trả về danh sách bình thường
         return ResponseEntity.ok(courseService.getApprovedCourses(pageable));
     }
 
@@ -59,39 +68,57 @@ public class PublicCourseController {
                 Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
+        // Lấy id của học viên hiện tại (nếu đã đăng nhập)
+        Long studentId = getCurrentStudentId();
+
+        // Nếu đã đăng nhập, trả về danh sách với trạng thái đăng ký
+        if (studentId != null) {
+            return ResponseEntity.ok(courseService.searchCoursesByTitleWithEnrollmentStatus(title, pageable, studentId));
+        }
+
+        // Nếu chưa đăng nhập, trả về danh sách bình thường
         return ResponseEntity.ok(courseService.searchCoursesByTitle(title, pageable));
     }
 
     @GetMapping("/{courseId}")
     @Operation(summary = "Get course details", description = "Get details of a specific approved course (full content for enrolled students, preview for others)")
     public ResponseEntity<CourseDetailResponse> getCourseById(@PathVariable Long courseId) {
-        // Kiểm tra khóa học có tồn tại và đã được phê duyệt
-        CourseResponse course = courseService.getCourseById(courseId);
+        // Lấy id của học viên hiện tại (nếu đã đăng nhập)
+        Long studentId = getCurrentStudentId();
+
+        // Lấy thông tin khóa học kèm trạng thái đăng ký
+        CourseResponse course;
+        if (studentId != null) {
+            course = courseService.getCourseWithEnrollmentStatus(courseId, studentId);
+        } else {
+            course = courseService.getCourseById(courseId);
+        }
 
         // Đảm bảo khóa học đã được phê duyệt để hiển thị công khai
         if (course.getStatus() != Course.Status.APPROVED) {
             throw new ResourceNotFoundException("Course not found with id: " + courseId);
         }
 
-        // Kiểm tra người dùng đã đăng nhập chưa
-        boolean isEnrolled = false;
-        Long studentId = null;
+        // Tạo phản hồi dựa trên trạng thái đăng ký
+        CourseDetailResponse response = new CourseDetailResponse(course, course.isEnrolled());
 
-        // Lấy thông tin người dùng hiện tại nếu đã đăng nhập
+        return ResponseEntity.ok(response);
+    }
+
+    // Helper method to get current student ID
+    private Long getCurrentStudentId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof UserDetailsImpl) {
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-            studentId = userDetails.getId();
 
-            // Kiểm tra xem học viên đã đăng ký khóa học này chưa
-            if (studentId != null) {
-                isEnrolled = enrollmentService.isStudentEnrolledInCourse(studentId, courseId);
+            // Check if user has STUDENT role
+            boolean isStudent = userDetails.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_STUDENT"));
+
+            if (isStudent) {
+                return userDetails.getId();
             }
         }
-
-        // Tạo phản hồi dựa trên trạng thái đăng ký
-        CourseDetailResponse response = new CourseDetailResponse(course, isEnrolled);
-
-        return ResponseEntity.ok(response);
+        return null;
     }
 }

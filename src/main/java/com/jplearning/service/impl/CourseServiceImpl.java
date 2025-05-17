@@ -2,6 +2,7 @@ package com.jplearning.service.impl;
 
 import com.jplearning.dto.request.*;
 import com.jplearning.dto.response.CourseResponse;
+import com.jplearning.dto.response.LevelResponse;
 import com.jplearning.entity.*;
 import com.jplearning.entity.Module;
 import com.jplearning.exception.BadRequestException;
@@ -10,6 +11,7 @@ import com.jplearning.mapper.CourseMapper;
 import com.jplearning.repository.*;
 import com.jplearning.service.CloudinaryService;
 import com.jplearning.service.CourseService;
+import com.jplearning.service.EnrollmentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -60,6 +62,9 @@ public class CourseServiceImpl implements CourseService {
     @Autowired
     private LevelRepository levelRepository;
 
+    @Autowired
+    private EnrollmentService enrollmentService;
+
     private Integer calculateCourseDuration(Course course) {
         int totalDuration = 0;
 
@@ -99,7 +104,7 @@ public class CourseServiceImpl implements CourseService {
     }
 
 
-    //    @Override
+    @Override
     @Transactional
     public CourseResponse createCourse(CourseRequest request, Long tutorId) {
         // Get tutor
@@ -202,6 +207,23 @@ public class CourseServiceImpl implements CourseService {
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + courseId));
 
         return courseMapper.courseToResponse(course);
+    }
+
+    @Override
+    public CourseResponse getCourseWithEnrollmentStatus(Long courseId, Long studentId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + courseId));
+
+        // Convert to response
+        CourseResponse response = courseMapper.courseToResponse(course);
+
+        // Check if student is enrolled in this course
+        if (studentId != null) {
+            boolean isEnrolled = enrollmentService.isStudentEnrolledInCourse(studentId, courseId);
+            response.setEnrolled(isEnrolled);
+        }
+
+        return response;
     }
 
     @Override
@@ -350,10 +372,45 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
+    public Page<CourseResponse> getApprovedCoursesWithEnrollmentStatus(Pageable pageable, Long studentId) {
+        Page<Course> courses = courseRepository.findByStatus(Course.Status.APPROVED, pageable);
+
+        return courses.map(course -> {
+            CourseResponse response = courseMapper.courseToResponse(course);
+
+            // Check enrollment status if student ID is provided
+            if (studentId != null) {
+                boolean isEnrolled = enrollmentService.isStudentEnrolledInCourse(studentId, course.getId());
+                response.setEnrolled(isEnrolled);
+            }
+
+            return response;
+        });
+    }
+
+    @Override
     public Page<CourseResponse> searchCoursesByTitle(String title, Pageable pageable) {
         Page<Course> courses = courseRepository.findByTitleContainingIgnoreCaseAndStatus(
                 title, Course.Status.APPROVED, pageable);
         return courses.map(courseMapper::courseToResponse);
+    }
+
+    @Override
+    public Page<CourseResponse> searchCoursesByTitleWithEnrollmentStatus(String title, Pageable pageable, Long studentId) {
+        Page<Course> courses = courseRepository.findByTitleContainingIgnoreCaseAndStatus(
+                title, Course.Status.APPROVED, pageable);
+
+        return courses.map(course -> {
+            CourseResponse response = courseMapper.courseToResponse(course);
+
+            // Check enrollment status if student ID is provided
+            if (studentId != null) {
+                boolean isEnrolled = enrollmentService.isStudentEnrolledInCourse(studentId, course.getId());
+                response.setEnrolled(isEnrolled);
+            }
+
+            return response;
+        });
     }
 
     @Override
@@ -600,6 +657,4 @@ public class CourseServiceImpl implements CourseService {
             throw new BadRequestException("Cannot submit course: " + String.join(", ", errors));
         }
     }
-
-
 }

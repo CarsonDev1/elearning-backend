@@ -31,4 +31,7 @@ public class CourseResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<ModuleResponse> modules;
+
+    @Builder.Default
+    private boolean enrolled = false;
 }

@@ -29,7 +29,7 @@ public class CourseDetailResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<ModulePreviewResponse> modules = new ArrayList<>();
-    private boolean isEnrolled;
+    private boolean enrolled;
 
     public CourseDetailResponse(CourseResponse course, boolean isEnrolled) {
         this.id = course.getId();
@@ -47,11 +47,11 @@ public class CourseDetailResponse {
         this.status = course.getStatus();
         this.createdAt = course.getCreatedAt();
         this.updatedAt = course.getUpdatedAt();
-        this.isEnrolled = isEnrolled;
+        this.enrolled = enrolled;
 
         // Xử lý module dựa trên trạng thái đăng ký
         if (course.getModules() != null) {
-            if (isEnrolled) {
+            if (enrolled) {
                 // Nếu đã đăng ký, hiển thị toàn bộ thông tin module và bài học
                 this.modules = course.getModules().stream()
                         .map(module -> new ModulePreviewResponse(module, true))
