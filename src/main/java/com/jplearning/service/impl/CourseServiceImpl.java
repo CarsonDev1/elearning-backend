@@ -60,7 +60,46 @@ public class CourseServiceImpl implements CourseService {
     @Autowired
     private LevelRepository levelRepository;
 
-//    @Override
+    private Integer calculateCourseDuration(Course course) {
+        int totalDuration = 0;
+
+        for (Module module : course.getModules()) {
+            // First reset module duration
+            int moduleDuration = 0;
+
+            // Calculate module duration from its lessons
+            for (Lesson lesson : module.getLessons()) {
+                if (lesson.getDurationInMinutes() != null) {
+                    moduleDuration += lesson.getDurationInMinutes();
+                }
+            }
+
+            // Update module duration
+            module.setDurationInMinutes(moduleDuration);
+
+            // Add to course total
+            totalDuration += moduleDuration;
+        }
+
+        return totalDuration;
+    }
+
+    @Transactional
+    public void updateCourseMetadata(Course course) {
+        // Calculate and set total duration
+        Integer totalDuration = calculateCourseDuration(course);
+        course.setDurationInMinutes(totalDuration);
+
+        // Calculate and set lesson count
+        int lessonCount = 0;
+        for (Module module : course.getModules()) {
+            lessonCount += module.getLessons().size();
+        }
+        course.setLessonCount(lessonCount);
+    }
+
+
+    //    @Override
     @Transactional
     public CourseResponse createCourse(CourseRequest request, Long tutorId) {
         // Get tutor
@@ -85,6 +124,9 @@ public class CourseServiceImpl implements CourseService {
         if (request.getModules() != null && !request.getModules().isEmpty()) {
             saveModules(request.getModules(), course);
         }
+
+        // After saving all modules and lessons, update course metadata
+        updateCourseMetadata(course);
 
         // Save course
         Course savedCourse = courseRepository.save(course);
@@ -203,6 +245,9 @@ public class CourseServiceImpl implements CourseService {
 
         // Update lesson count
         updateLessonCount(course);
+
+        // After updating all modules and lessons, update course metadata
+        updateCourseMetadata(course);
 
         // Save updated course
         Course updatedCourse = courseRepository.save(course);
@@ -369,10 +414,8 @@ public class CourseServiceImpl implements CourseService {
             Module module = courseMapper.requestToModule(moduleRequest);
             module.setCourse(course);
 
-            // Add to course's modules list (which is now guaranteed to be initialized)
+            // Add to course's modules list
             course.getModules().add(module);
-
-            // Save the module (cascading will be handled by the course save)
 
             // Initialize the lessons list if needed
             if (module.getLessons() == null) {
@@ -383,6 +426,15 @@ public class CourseServiceImpl implements CourseService {
             if (moduleRequest.getLessons() != null && !moduleRequest.getLessons().isEmpty()) {
                 saveLessons(moduleRequest.getLessons(), module);
             }
+
+            // Calculate module duration based on its lessons
+            int moduleDuration = 0;
+            for (Lesson lesson : module.getLessons()) {
+                if (lesson.getDurationInMinutes() != null) {
+                    moduleDuration += lesson.getDurationInMinutes();
+                }
+            }
+            module.setDurationInMinutes(moduleDuration);
         }
     }
 

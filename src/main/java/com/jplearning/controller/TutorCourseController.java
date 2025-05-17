@@ -72,9 +72,17 @@ public class TutorCourseController {
             description = "Get details of a specific course by ID",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-
+    @PreAuthorize("hasRole('TUTOR')")
+    public ResponseEntity<CourseResponse> getCourseById(@PathVariable Long courseId) {
+        return ResponseEntity.ok(courseService.getCourseById(courseId));
+    }
 
     @PostMapping(value = "/{courseId}/thumbnail", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "Upload course thumbnail",
+            description = "Upload thumbnail image for a course",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @PreAuthorize("hasRole('TUTOR')")
     public ResponseEntity<CourseResponse> uploadCourseThumbnail(
             @PathVariable Long courseId,
@@ -85,12 +93,6 @@ public class TutorCourseController {
         } catch (IOException e) {
             throw new BadRequestException("Failed to upload thumbnail: " + e.getMessage());
         }
-    }
-
-
-    @PreAuthorize("hasRole('TUTOR')")
-    public ResponseEntity<CourseResponse> getCourseById(@PathVariable Long courseId) {
-        return ResponseEntity.ok(courseService.getCourseById(courseId));
     }
 
     @PutMapping("/{courseId}")

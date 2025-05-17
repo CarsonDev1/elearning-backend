@@ -48,4 +48,20 @@ public interface AdminUserService {
      * @return Page of matching user responses
      */
     Page<UserResponse> searchUsers(String query, Pageable pageable);
+
+    /**
+     * Enable or disable a user account
+     * @param userId ID of the user
+     * @param enabled Whether to enable or disable the account
+     * @return Updated user response
+     */
+    UserResponse setUserStatus(Long userId, boolean enabled);
+
+    /**
+     * Block or unblock a user account
+     * @param userId ID of the user
+     * @param blocked Whether to block or unblock the account
+     * @return Updated user response
+     */
+    UserResponse setUserBlockStatus(Long userId, boolean blocked);
 }

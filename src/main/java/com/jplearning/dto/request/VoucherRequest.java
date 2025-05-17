@@ -41,7 +41,9 @@ public class VoucherRequest {
 
     private Integer perUserLimit;
 
+    // Không bắt buộc nhập danh sách khóa học
     private List<Long> applicableCourseIds;
 
+    // Không bắt buộc nhập danh sách combo
     private List<Long> applicableComboIds;
 }

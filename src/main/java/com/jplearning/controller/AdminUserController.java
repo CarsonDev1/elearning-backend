@@ -1,5 +1,6 @@
 package com.jplearning.controller;
 
+import com.jplearning.dto.response.MessageResponse;
 import com.jplearning.dto.response.UserResponse;
 import com.jplearning.service.AdminUserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -111,5 +112,58 @@ public class AdminUserController {
 
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok(adminUserService.searchUsers(query, pageable));
+    }
+
+    @PutMapping("/{userId}/enable")
+    @Operation(
+            summary = "Enable user account",
+            description = "Enable a user account (activate)",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<UserResponse> enableUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(adminUserService.setUserStatus(userId, true));
+    }
+
+    @PutMapping("/{userId}/disable")
+    @Operation(
+            summary = "Disable user account",
+            description = "Disable a user account (deactivate)",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<UserResponse> disableUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(adminUserService.setUserStatus(userId, false));
+    }
+
+    @PutMapping("/{userId}/block")
+    @Operation(
+            summary = "Block user account",
+            description = "Block a user account",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<UserResponse> blockUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(adminUserService.setUserBlockStatus(userId, true));
+    }
+
+    @PutMapping("/{userId}/unblock")
+    @Operation(
+            summary = "Unblock user account",
+            description = "Unblock a user account",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<UserResponse> unblockUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(adminUserService.setUserBlockStatus(userId, false));
+    }
+
+    @GetMapping("/{userId}")
+    @Operation(
+            summary = "Get user by ID",
+            description = "Get details of a user by ID",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<UserResponse> getUserById(@PathVariable Long userId) {
+        // This endpoint should be implemented in UserService, but we'll reference it here
+        return ResponseEntity.ok(adminUserService.searchUsers(userId.toString(), PageRequest.of(0, 1))
+                .getContent().stream().findFirst()
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId)));
     }
 }

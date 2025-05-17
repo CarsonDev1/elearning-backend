@@ -19,7 +19,7 @@ public class CourseRequest {
     @Size(max = 5000, message = "Description must be less than 5000 characters")
     private String description;
 
-    private Integer durationInMinutes;
+//    private Integer durationInMinutes;
 
     @NotNull(message = "Level ID is required")
     private Long levelId;

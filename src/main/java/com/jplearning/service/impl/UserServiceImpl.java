@@ -1,11 +1,16 @@
 package com.jplearning.service.impl;
 
+import com.jplearning.entity.Education;
+import com.jplearning.entity.Experience;
 import com.jplearning.dto.request.ProfileUpdateRequest;
 import com.jplearning.dto.request.TutorProfileUpdateRequest;
 import com.jplearning.dto.response.EducationResponse;
 import com.jplearning.dto.response.ExperienceResponse;
 import com.jplearning.dto.response.UserResponse;
-import com.jplearning.entity.*;
+import com.jplearning.entity.Role;
+import com.jplearning.entity.Student;
+import com.jplearning.entity.Tutor;
+import com.jplearning.entity.User;
 import com.jplearning.exception.BadRequestException;
 import com.jplearning.exception.ResourceNotFoundException;
 import com.jplearning.mapper.UserMapper;
@@ -25,7 +30,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -69,6 +76,8 @@ public class UserServiceImpl implements UserService {
                 .phoneNumber(user.getPhoneNumber())
                 .avatarUrl(user.getAvatarUrl())
                 .roles(roles)
+                .enabled(user.isEnabled())
+                .blocked(user.isBlocked())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt());
 
@@ -119,23 +128,6 @@ public class UserServiceImpl implements UserService {
 
     private boolean isRolePresent(Set<String> roles, String roleName) {
         return roles.stream().anyMatch(role -> role.equals(roleName));
-    }
-
-    @Override
-    @Transactional
-    public UserResponse blockUser(Long userId, boolean blocked) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
-
-        // Cập nhật trạng thái blocked
-        user.setBlocked(blocked);
-
-        // Lưu vào database
-        User updatedUser = userRepository.save(user);
-
-        // Trả về response
-        
-        return getUserDetails(updatedUser);
     }
 
     @Override
@@ -308,6 +300,23 @@ public class UserServiceImpl implements UserService {
         return getUserDetails(user);
     }
 
+    @Override
+    @Transactional
+    public UserResponse blockUser(Long userId, boolean blocked) {
+        // Only admin can access this method
+        if (!isCurrentUserAdmin()) {
+            throw new AccessDeniedException("Only administrators can block/unblock users");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        user.setBlocked(blocked);
+        userRepository.save(user);
+
+        return getUserDetails(user);
+    }
+
     // Helper methods
 
     private void validateUserAccess(Long userId) {
@@ -341,8 +350,6 @@ public class UserServiceImpl implements UserService {
                 .roles(roles)
                 .enabled(user.isEnabled())
                 .blocked(user.isBlocked())
-                .blockReason(user.getBlockReason())
-                .blockedAt(user.getBlockedAt())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt());
 

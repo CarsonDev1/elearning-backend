@@ -54,5 +54,11 @@ public interface UserService {
      */
     UserResponse setUserStatus(Long userId, boolean enabled);
 
+    /**
+     * Block or unblock a user (admin only)
+     * @param userId ID of the user
+     * @param blocked Whether to block or unblock the user
+     * @return Updated user details
+     */
     UserResponse blockUser(Long userId, boolean blocked);
 }

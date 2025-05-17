@@ -12,10 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class CloudinaryServiceImpl implements CloudinaryService {
@@ -85,11 +82,15 @@ public class CloudinaryServiceImpl implements CloudinaryService {
     public Map<String, String> uploadVideo(MultipartFile multipartFile) throws IOException {
         try {
             File file = convertMultipartToFile(multipartFile);
+
+            // Use the simplest possible parameters to avoid potential errors
             Map<String, Object> params = new HashMap<>();
             params.put("resource_type", "video");
             params.put("folder", "japanese_learning/videos");
 
+            logger.info("Starting video upload to Cloudinary, size: {} bytes", file.length());
             Map<String, Object> uploadResult = cloudinary.uploader().upload(file, params);
+            logger.info("Video upload completed successfully");
 
             boolean isDeleted = file.delete();
             if (!isDeleted) {
@@ -97,9 +98,16 @@ public class CloudinaryServiceImpl implements CloudinaryService {
             }
 
             return extractUploadResult(uploadResult);
-        } catch (IOException e) {
-            logger.error("Failed to upload video to Cloudinary", e);
-            throw e;
+        } catch (Exception e) {
+            logger.error("Failed to upload video to Cloudinary: {}", e.getMessage(), e);
+            // For debugging, log the stack trace
+            e.printStackTrace();
+            // Rethrow as IOException to maintain method signature
+            if (e instanceof IOException) {
+                throw (IOException) e;
+            } else {
+                throw new IOException("Error uploading video: " + e.getMessage(), e);
+            }
         }
     }
 
@@ -108,10 +116,10 @@ public class CloudinaryServiceImpl implements CloudinaryService {
         String fileExtension = Objects.requireNonNull(originalFilename).substring(originalFilename.lastIndexOf("."));
         String tempFilename = UUID.randomUUID().toString() + fileExtension;
 
-        File file = new File(tempFilename);
-        FileOutputStream fos = new FileOutputStream(file);
-        fos.write(multipartFile.getBytes());
-        fos.close();
+        File file = new File(System.getProperty("java.io.tmpdir") + File.separator + tempFilename);
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            fos.write(multipartFile.getBytes());
+        }
 
         return file;
     }

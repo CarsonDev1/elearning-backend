@@ -70,6 +70,8 @@ public class VoucherServiceImpl implements VoucherService {
                 .perUserLimit(request.getPerUserLimit())
                 .usageCount(0)
                 .isActive(true)
+                .applicableCourses(new HashSet<>())
+                .applicableCombos(new HashSet<>())
                 .build();
 
         // Add applicable courses if provided
@@ -104,17 +106,17 @@ public class VoucherServiceImpl implements VoucherService {
     @Override
     @Transactional
     public VoucherResponse updateVoucher(Long voucherId, VoucherRequest request) {
-        // Find voucher
+        // Tìm voucher
         Voucher voucher = voucherRepository.findById(voucherId)
                 .orElseThrow(() -> new ResourceNotFoundException("Voucher not found with id: " + voucherId));
 
-        // Check if code is being changed and is unique
+        // Kiểm tra nếu code thay đổi và là duy nhất
         if (!voucher.getCode().equals(request.getCode()) &&
                 voucherRepository.findByCodeAndIsActiveTrue(request.getCode()).isPresent()) {
             throw new BadRequestException("Voucher code already exists");
         }
 
-        // Update voucher fields
+        // Cập nhật các trường của voucher
         voucher.setCode(request.getCode());
         voucher.setDescription(request.getDescription());
         voucher.setDiscountType(request.getDiscountType());
@@ -126,32 +128,51 @@ public class VoucherServiceImpl implements VoucherService {
         voucher.setTotalUsageLimit(request.getTotalUsageLimit());
         voucher.setPerUserLimit(request.getPerUserLimit());
 
-        // Update applicable courses if provided
+        // Lưu thay đổi cơ bản vào voucher
+        voucher = voucherRepository.save(voucher);
+
+        // Xử lý các khoá học áp dụng
         if (request.getApplicableCourseIds() != null) {
-            Set<Course> applicableCourses = new HashSet<>();
-            for (Long courseId : request.getApplicableCourseIds()) {
-                Course course = courseRepository.findById(courseId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + courseId));
-                applicableCourses.add(course);
+            // Xóa tất cả các liên kết khóa học hiện tại của voucher này
+            voucherRepository.deleteAllApplicableCourses(voucherId);
+
+            // Thêm các khóa học mới nếu có
+            if (!request.getApplicableCourseIds().isEmpty()) {
+                Set<Course> newCourses = new HashSet<>();
+                for (Long courseId : request.getApplicableCourseIds()) {
+                    Course course = courseRepository.findById(courseId)
+                            .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + courseId));
+                    newCourses.add(course);
+                }
+                voucher.setApplicableCourses(newCourses);
+            } else {
+                voucher.setApplicableCourses(new HashSet<>());
             }
-            voucher.setApplicableCourses(applicableCourses);
         }
 
-        // Update applicable combos if provided
+        // Xử lý combo áp dụng
         if (request.getApplicableComboIds() != null) {
-            Set<CourseCombo> applicableCombos = new HashSet<>();
-            for (Long comboId : request.getApplicableComboIds()) {
-                CourseCombo combo = comboRepository.findById(comboId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Course combo not found with id: " + comboId));
-                applicableCombos.add(combo);
+            // Xóa tất cả các liên kết combo hiện tại của voucher này
+            voucherRepository.deleteAllApplicableCombos(voucherId);
+
+            // Thêm các combo mới nếu có
+            if (!request.getApplicableComboIds().isEmpty()) {
+                Set<CourseCombo> newCombos = new HashSet<>();
+                for (Long comboId : request.getApplicableComboIds()) {
+                    CourseCombo combo = comboRepository.findById(comboId)
+                            .orElseThrow(() -> new ResourceNotFoundException("Course combo not found with id: " + comboId));
+                    newCombos.add(combo);
+                }
+                voucher.setApplicableCombos(newCombos);
+            } else {
+                voucher.setApplicableCombos(new HashSet<>());
             }
-            voucher.setApplicableCombos(applicableCombos);
         }
 
-        // Save updated voucher
+        // Lưu voucher đã cập nhật
         Voucher updatedVoucher = voucherRepository.save(voucher);
 
-        // Return response
+        // Trả về response
         return mapToResponse(updatedVoucher);
     }
 
@@ -186,8 +207,7 @@ public class VoucherServiceImpl implements VoucherService {
     @Override
     public Page<VoucherResponse> getActiveVouchers(Pageable pageable) {
         LocalDateTime now = LocalDateTime.now();
-        Page<Voucher> vouchers = voucherRepository.findByIsActiveTrueAndValidFromBeforeAndValidUntilAfter(
-                now, now, pageable);
+        Page<Voucher> vouchers = voucherRepository.findByIsActiveTrue(pageable);
 
         return vouchers.map(this::mapToResponse);
     }
@@ -221,6 +241,10 @@ public class VoucherServiceImpl implements VoucherService {
                     .orElseThrow(() -> new BadRequestException("Invalid or expired voucher code"));
         } catch (Exception e) {
             return BigDecimal.ZERO; // Return zero discount if voucher not found or expired
+        }
+
+        if (voucher.getApplicableCourses() == null) {
+            voucher.setApplicableCourses(new HashSet<>());
         }
 
         // Check if minimum purchase amount is met

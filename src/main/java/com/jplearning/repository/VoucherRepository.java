@@ -4,7 +4,9 @@ import com.jplearning.entity.Voucher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -19,6 +21,15 @@ public interface VoucherRepository extends JpaRepository<Voucher, Long> {
             "AND v.validFrom <= :now AND v.validUntil >= :now")
     Optional<Voucher> findValidVoucherByCode(String code, LocalDateTime now);
 
+    @Modifying
+    @Query(value = "DELETE FROM voucher_applicable_courses WHERE voucher_id = :voucherId", nativeQuery = true)
+    void deleteAllApplicableCourses(@Param("voucherId") Long voucherId);
+
+    @Modifying
+    @Query(value = "DELETE FROM voucher_applicable_combos WHERE voucher_id = :voucherId", nativeQuery = true)
+    void deleteAllApplicableCombos(@Param("voucherId") Long voucherId);
+
+
     Page<Voucher> findByIsActiveTrue(Pageable pageable);
 
     Page<Voucher> findByIsActiveTrueAndValidFromBeforeAndValidUntilAfter(
@@ -31,4 +42,5 @@ public interface VoucherRepository extends JpaRepository<Voucher, Long> {
     @Query("SELECT v FROM Voucher v JOIN v.applicableCombos cb WHERE cb.id = :comboId " +
             "AND v.isActive = true AND v.validFrom <= :now AND v.validUntil >= :now")
     List<Voucher> findValidVouchersByComboId(Long comboId, LocalDateTime now);
+
 }

@@ -3,6 +3,11 @@ package com.jplearning.controller;
 import com.jplearning.exception.BadRequestException;
 import com.jplearning.service.CloudinaryService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +23,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/files")
 @Tag(name = "File Upload", description = "File upload APIs")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*", maxAge = 3600)
 public class FileController {
 
     @Autowired
@@ -30,8 +35,16 @@ public class FileController {
             description = "Upload an image file to cloud storage",
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Image uploaded successfully",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400", description = "Invalid file or upload failed",
+                    content = @Content)
+    })
     @PreAuthorize("hasRole('STUDENT') or hasRole('TUTOR') or hasRole('ADMIN')")
-    public ResponseEntity<Map<String, String>> uploadImage(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<Map<String, String>> uploadImage(
+            @Parameter(description = "Image file to upload", required = true, content = @Content(mediaType = "multipart/form-data"))
+            @RequestParam("file") MultipartFile file) {
         try {
             validateImageFile(file);
             Map<String, String> result = cloudinaryService.uploadImage(file);
@@ -47,8 +60,16 @@ public class FileController {
             description = "Upload a video file to cloud storage",
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Video uploaded successfully",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400", description = "Invalid file or upload failed",
+                    content = @Content)
+    })
     @PreAuthorize("hasRole('TUTOR') or hasRole('ADMIN')")
-    public ResponseEntity<Map<String, String>> uploadVideo(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<Map<String, String>> uploadVideo(
+            @Parameter(description = "Video file to upload", required = true, content = @Content(mediaType = "multipart/form-data"))
+            @RequestParam("file") MultipartFile file) {
         try {
             validateVideoFile(file);
             Map<String, String> result = cloudinaryService.uploadVideo(file);
@@ -64,8 +85,16 @@ public class FileController {
             description = "Upload a document file to cloud storage",
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Document uploaded successfully",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400", description = "Invalid file or upload failed",
+                    content = @Content)
+    })
     @PreAuthorize("hasRole('TUTOR') or hasRole('ADMIN')")
-    public ResponseEntity<Map<String, String>> uploadDocument(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<Map<String, String>> uploadDocument(
+            @Parameter(description = "Document file to upload", required = true, content = @Content(mediaType = "multipart/form-data"))
+            @RequestParam("file") MultipartFile file) {
         try {
             validateDocumentFile(file);
             Map<String, String> result = cloudinaryService.uploadFile(file);
@@ -81,6 +110,12 @@ public class FileController {
             description = "Delete a file from cloud storage by its public ID",
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "File deleted successfully",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400", description = "Invalid public ID or deletion failed",
+                    content = @Content)
+    })
     @PreAuthorize("hasRole('TUTOR') or hasRole('ADMIN')")
     public ResponseEntity<Map<String, String>> deleteFile(@PathVariable String publicId) {
         try {

@@ -27,12 +27,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             throw new DisabledException("Account is not activated. Please verify your email.");
         }
 
-        // Check if account is blocked
+        // Check if account is blocked by admin
         if (user.isBlocked()) {
-            String reason = user.getBlockReason() != null && !user.getBlockReason().isEmpty()
-                    ? " Reason: " + user.getBlockReason()
-                    : "";
-            throw new LockedException("Your account has been blocked." + reason + " Please contact administrator.");
+            throw new LockedException("Your account has been blocked. Please contact administrator.");
         }
 
         return UserDetailsImpl.build(user);

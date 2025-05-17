@@ -2,6 +2,7 @@ package com.jplearning.controller;
 
 import com.jplearning.dto.request.ProfileUpdateRequest;
 import com.jplearning.dto.request.TutorProfileUpdateRequest;
+import com.jplearning.dto.response.MessageResponse;
 import com.jplearning.dto.response.UserResponse;
 import com.jplearning.exception.BadRequestException;
 import com.jplearning.security.services.UserDetailsImpl;
@@ -47,8 +48,6 @@ public class UserController {
             description = "Upload a new avatar image for the current user",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-
-
     @PreAuthorize("hasRole('STUDENT') or hasRole('TUTOR') or hasRole('ADMIN')")
     public ResponseEntity<UserResponse> updateAvatar(@RequestParam("file") MultipartFile file) {
         try {
@@ -137,35 +136,35 @@ public class UserController {
         return ResponseEntity.ok(userService.getUserById(userId));
     }
 
-    @PutMapping("/{userId}/status")
+    @GetMapping("/account-status")
     @Operation(
-            summary = "Enable/disable user",
-            description = "Admin can enable or disable any user",
+            summary = "Get account status",
+            description = "Get current account status (enabled/blocked)",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserResponse> setUserStatus(
-            @PathVariable Long userId,
-            @RequestParam boolean enabled) {
-        return ResponseEntity.ok(userService.setUserStatus(userId, enabled));
+    @PreAuthorize("hasRole('STUDENT') or hasRole('TUTOR') or hasRole('ADMIN')")
+    public ResponseEntity<MessageResponse> getAccountStatus() {
+        UserResponse user = userService.getCurrentUser();
+        String status;
+
+        if (user.isBlocked()) {
+            status = "Your account is currently blocked. Please contact administrator for assistance.";
+        } else if (!user.isEnabled()) {
+            status = "Your account has not been activated. Please verify your email.";
+
+            if (user.getUserType().equals("TUTOR")) {
+                status += " As a tutor, your account also requires admin approval after email verification.";
+            }
+        } else {
+            status = "Your account is active and in good standing.";
+        }
+
+        return ResponseEntity.ok(new MessageResponse(status));
     }
 
     private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         return userDetails.getId();
-    }
-
-    @PutMapping("/{userId}/block")
-    @Operation(
-            summary = "Block/unblock user",
-            description = "Admin can block or unblock any user",
-            security = @SecurityRequirement(name = "bearerAuth")
-    )
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserResponse> blockUser(
-            @PathVariable Long userId,
-            @RequestParam boolean blocked) {
-        return ResponseEntity.ok(userService.blockUser(userId, blocked));
     }
 }

@@ -1,10 +1,11 @@
 package com.jplearning.controller;
 
-import com.jplearning.dto.request.BlockUserRequest;
-import com.jplearning.dto.request.UnblockUserRequest;
+import com.jplearning.dto.request.ProfileUpdateRequest;
+import com.jplearning.dto.request.TutorProfileUpdateRequest;
 import com.jplearning.dto.response.MessageResponse;
 import com.jplearning.dto.response.UserResponse;
-import com.jplearning.service.UserManagementService;
+import com.jplearning.service.AdminUserService;
+import com.jplearning.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,64 +16,108 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/admin/user-management")
+@RequestMapping("/api/user-management")
 @Tag(name = "User Management", description = "APIs for user account management")
 @CrossOrigin(origins = "*")
-@PreAuthorize("hasRole('ADMIN')")
 public class UserManagementController {
 
     @Autowired
-    private UserManagementService userManagementService;
+    private UserService userService;
 
-    @PostMapping("/block")
+    @Autowired
+    private AdminUserService adminUserService;
+
+    @PutMapping("/account/enable/{userId}")
     @Operation(
-            summary = "Block user",
-            description = "Block a user account with optional reason",
+            summary = "Enable user account",
+            description = "Admin can enable a user account",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    public ResponseEntity<UserResponse> blockUser(@Valid @RequestBody BlockUserRequest request) {
-        return ResponseEntity.ok(userManagementService.blockUser(request.getUserId(), request.getReason()));
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> enableUserAccount(@PathVariable Long userId) {
+        return ResponseEntity.ok(adminUserService.setUserStatus(userId, true));
     }
 
-    @PostMapping("/unblock")
+    @PutMapping("/account/disable/{userId}")
     @Operation(
-            summary = "Unblock user",
-            description = "Unblock a previously blocked user account",
+            summary = "Disable user account",
+            description = "Admin can disable a user account",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    public ResponseEntity<UserResponse> unblockUser(@Valid @RequestBody UnblockUserRequest request) {
-        return ResponseEntity.ok(userManagementService.unblockUser(request.getUserId()));
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> disableUserAccount(@PathVariable Long userId) {
+        return ResponseEntity.ok(adminUserService.setUserStatus(userId, false));
     }
 
-    @GetMapping("/{userId}/block-status")
+    @PutMapping("/account/block/{userId}")
     @Operation(
-            summary = "Get user block status",
-            description = "Get block status information for a user",
+            summary = "Block user account",
+            description = "Admin can block a user account",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    public ResponseEntity<UserResponse> getUserBlockStatus(@PathVariable Long userId) {
-        return ResponseEntity.ok(userManagementService.getUserBlockStatus(userId));
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> blockUserAccount(@PathVariable Long userId) {
+        return ResponseEntity.ok(adminUserService.setUserBlockStatus(userId, true));
     }
 
-    @PutMapping("/{userId}/block")
+    @PutMapping("/account/unblock/{userId}")
     @Operation(
-            summary = "Block user with path variable",
-            description = "Alternative endpoint to block a user using path variable",
+            summary = "Unblock user account",
+            description = "Admin can unblock a user account",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    public ResponseEntity<UserResponse> blockUserPath(
-            @PathVariable Long userId,
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> unblockUserAccount(@PathVariable Long userId) {
+        return ResponseEntity.ok(adminUserService.setUserBlockStatus(userId, false));
+    }
+
+    @PutMapping("/tutor/approve/{tutorId}")
+    @Operation(
+            summary = "Approve tutor",
+            description = "Admin can approve a pending tutor",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> approveTutor(@PathVariable Long tutorId) {
+        return ResponseEntity.ok(adminUserService.approveTutor(tutorId));
+    }
+
+    @PutMapping("/tutor/reject/{tutorId}")
+    @Operation(
+            summary = "Reject tutor",
+            description = "Admin can reject a pending tutor",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> rejectTutor(
+            @PathVariable Long tutorId,
             @RequestParam(required = false) String reason) {
-        return ResponseEntity.ok(userManagementService.blockUser(userId, reason));
+        return ResponseEntity.ok(adminUserService.rejectTutor(tutorId, reason));
     }
 
-    @PutMapping("/{userId}/unblock")
+    @GetMapping("/account/status")
     @Operation(
-            summary = "Unblock user with path variable",
-            description = "Alternative endpoint to unblock a user using path variable",
+            summary = "Get account status",
+            description = "Get detailed status information about the current user's account",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    public ResponseEntity<UserResponse> unblockUserPath(@PathVariable Long userId) {
-        return ResponseEntity.ok(userManagementService.unblockUser(userId));
+    @PreAuthorize("hasRole('STUDENT') or hasRole('TUTOR') or hasRole('ADMIN')")
+    public ResponseEntity<MessageResponse> getAccountStatus() {
+        UserResponse user = userService.getCurrentUser();
+
+        String statusMessage = "Your account is ";
+        if (!user.isEnabled()) {
+            statusMessage += "not activated. Please verify your email.";
+        } else if (user.isBlocked()) {
+            statusMessage += "blocked. Please contact administrator for assistance.";
+        } else {
+            statusMessage += "active and in good standing.";
+        }
+
+        if (user.getUserType().equals("TUTOR") && !user.isEnabled()) {
+            statusMessage += " As a tutor, your account requires admin approval before you can access all features.";
+        }
+
+        return ResponseEntity.ok(new MessageResponse(statusMessage));
     }
 }

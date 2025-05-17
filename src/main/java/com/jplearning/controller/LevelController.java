@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/levels")
+@RequestMapping("/levels")
 @Tag(name = "Level Management", description = "APIs for managing course levels")
 @CrossOrigin(origins = "*")
 public class LevelController {
@@ -37,10 +37,8 @@ public class LevelController {
     @GetMapping("/paginated")
     @Operation(
             summary = "Get levels with pagination",
-            description = "Get paginated list of levels",
-            security = @SecurityRequirement(name = "bearerAuth")
+            description = "Get paginated list of levels"
     )
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<LevelResponse>> getLevelsPaginated(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,

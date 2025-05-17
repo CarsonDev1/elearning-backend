@@ -16,7 +16,6 @@ import com.jplearning.repository.UserRepository;
 import com.jplearning.service.AdminUserService;
 import com.jplearning.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -44,9 +43,6 @@ public class AdminUserServiceImpl implements AdminUserService {
     @Autowired
     private EmailService emailService;
 
-    @Value("${app.frontend-url}")
-    private String frontendUrl;
-
     @Override
     public Page<UserResponse> getAllStudents(Pageable pageable) {
         Page<Student> students = studentRepository.findAll(pageable);
@@ -61,8 +57,8 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     @Override
     public Page<UserResponse> getPendingTutors(Pageable pageable) {
-        // Get tutors that are not enabled (pending approval)
-        Page<Tutor> pendingTutors = tutorRepository.findByEnabled(false, pageable);
+        // Get tutors that are not enabled (pending approval) and not blocked
+        Page<Tutor> pendingTutors = tutorRepository.findByEnabledAndBlocked(false, false, pageable);
         return pendingTutors.map(this::mapTutorToResponse);
     }
 
@@ -77,21 +73,16 @@ public class AdminUserServiceImpl implements AdminUserService {
             throw new BadRequestException("Tutor is already approved");
         }
 
-        // Enable tutor account
+        // Enable tutor account (only sets enabled=true, doesn't change blocked status)
         tutor.setEnabled(true);
         Tutor updatedTutor = tutorRepository.save(tutor);
 
-        // Send approval notification email
+        // Send notification email
         emailService.sendEmail(
                 tutor.getEmail(),
-                "Chúc mừng! Hồ sơ giảng viên của bạn đã được phê duyệt",
-                "Xin chào " + tutor.getFullName() + ",\n\n" +
-                        "Chúng tôi rất vui thông báo rằng hồ sơ đăng ký trở thành giảng viên trên nền tảng Japanese Learning của bạn đã được phê duyệt!\n\n" +
-                        "Bây giờ, bạn có thể đăng nhập vào tài khoản của mình để bắt đầu tạo khóa học, bài học và bài tập nhằm chia sẻ kiến thức với các học viên.\n\n" +
-                        "Đăng nhập tại: " + frontendUrl + "/login\n\n" +
-                        "Nếu bạn có bất kỳ câu hỏi hoặc cần hỗ trợ, vui lòng liên hệ với đội ngũ hỗ trợ của chúng tôi.\n\n" +
-                        "Trân trọng,\n" +
-                        "Đội ngũ Japanese Learning"
+                "Your Tutor Account Has Been Approved",
+                "Congratulations! Your tutor account on Japanese Learning Platform has been approved. " +
+                        "You can now log in and start creating courses."
         );
 
         return mapTutorToResponse(updatedTutor);
@@ -103,34 +94,25 @@ public class AdminUserServiceImpl implements AdminUserService {
         Tutor tutor = tutorRepository.findById(tutorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tutor not found with id: " + tutorId));
 
-        // Chúng tôi không thực sự xóa tài khoản, chỉ giữ ở trạng thái bị vô hiệu hóa
-        // Có thể thêm cờ "bị từ chối" trong triển khai thực tế
+        // We don't actually delete the account, but keep it disabled and mark it as blocked
+        tutor.setEnabled(false);
+        tutor.setBlocked(true);
+        Tutor updatedTutor = tutorRepository.save(tutor);
 
-        // Soạn nội dung email từ chối
-        String rejectionMessage = "Xin chào " + tutor.getFullName() + ",\n\n" +
-                "Cảm ơn bạn đã quan tâm và đăng ký trở thành giảng viên trên nền tảng Japanese Learning.\n\n" +
-                "Sau khi xem xét cẩn thận hồ sơ của bạn, chúng tôi rất tiếc phải thông báo rằng hiện tại chúng tôi không thể phê duyệt tài khoản giảng viên của bạn.";
-
+        // Send rejection email
+        String rejectionMessage = "We're sorry, but your tutor application has been rejected.";
         if (reason != null && !reason.isEmpty()) {
-            rejectionMessage += "\n\nLý do: " + reason;
+            rejectionMessage += " Reason: " + reason;
         }
-
-        rejectionMessage += "\n\nNếu bạn cho rằng đây là một sự nhầm lẫn hoặc muốn bổ sung thêm thông tin để được xem xét lại, " +
-                "vui lòng liên hệ với đội ngũ hỗ trợ của chúng tôi.\n\n" +
-                "Bạn vẫn có thể đăng nhập vào tài khoản của mình tại: " + frontendUrl + "/login\n\n" +
-                "Chúng tôi rất trân trọng sự quan tâm của bạn.\n\n" +
-                "Trân trọng,\n" +
-                "Đội ngũ Japanese Learning";
 
         emailService.sendEmail(
                 tutor.getEmail(),
-                "Cập nhật về hồ sơ gia sư của bạn",
+                "Your Tutor Application Status",
                 rejectionMessage
         );
 
-        return mapTutorToResponse(tutor);
+        return mapTutorToResponse(updatedTutor);
     }
-
 
     @Override
     public Page<UserResponse> searchUsers(String query, Pageable pageable) {
@@ -154,6 +136,48 @@ public class AdminUserServiceImpl implements AdminUserService {
             // Fallback to basic user info
             return mapUserToBasicResponse(user);
         });
+    }
+
+    @Override
+    @Transactional
+    public UserResponse setUserStatus(Long userId, boolean enabled) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        // Update enabled status
+        user.setEnabled(enabled);
+        User updatedUser = userRepository.save(user);
+
+        // Send notification email
+        String subject = enabled ? "Your Account Has Been Activated" : "Your Account Has Been Deactivated";
+        String message = enabled
+                ? "Your account on Japanese Learning Platform has been activated. You can now log in."
+                : "Your account on Japanese Learning Platform has been deactivated. Please contact administrator for more information.";
+
+        emailService.sendEmail(user.getEmail(), subject, message);
+
+        return mapUserToResponse(updatedUser);
+    }
+
+    @Override
+    @Transactional
+    public UserResponse setUserBlockStatus(Long userId, boolean blocked) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        // Update blocked status
+        user.setBlocked(blocked);
+        User updatedUser = userRepository.save(user);
+
+        // Send notification email
+        String subject = blocked ? "Your Account Has Been Blocked" : "Your Account Has Been Unblocked";
+        String message = blocked
+                ? "Your account on Japanese Learning Platform has been blocked. Please contact administrator for more information."
+                : "Your account on Japanese Learning Platform has been unblocked. You can now log in.";
+
+        emailService.sendEmail(user.getEmail(), subject, message);
+
+        return mapUserToResponse(updatedUser);
     }
 
     // Helper methods
@@ -182,6 +206,8 @@ public class AdminUserServiceImpl implements AdminUserService {
                 .avatarUrl(student.getAvatarUrl())
                 .roles(roles)
                 .userType("STUDENT")
+                .enabled(student.isEnabled())
+                .blocked(student.isBlocked())
                 .createdAt(student.getCreatedAt())
                 .updatedAt(student.getUpdatedAt())
                 .build();
@@ -217,6 +243,8 @@ public class AdminUserServiceImpl implements AdminUserService {
                 .avatarUrl(tutor.getAvatarUrl())
                 .roles(roles)
                 .userType("TUTOR")
+                .enabled(tutor.isEnabled())
+                .blocked(tutor.isBlocked())
                 .teachingRequirements(tutor.getTeachingRequirements())
                 .educations(educationResponses)
                 .experiences(experienceResponses)
@@ -250,8 +278,26 @@ public class AdminUserServiceImpl implements AdminUserService {
                 .avatarUrl(user.getAvatarUrl())
                 .roles(roles)
                 .userType(userType)
+                .enabled(user.isEnabled())
+                .blocked(user.isBlocked())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .build();
+    }
+
+    private UserResponse mapUserToResponse(User user) {
+        if (isStudent(user)) {
+            Student student = studentRepository.findById(user.getId()).orElse(null);
+            if (student != null) {
+                return mapStudentToResponse(student);
+            }
+        } else if (isTutor(user)) {
+            Tutor tutor = tutorRepository.findById(user.getId()).orElse(null);
+            if (tutor != null) {
+                return mapTutorToResponse(tutor);
+            }
+        }
+
+        return mapUserToBasicResponse(user);
     }
 }

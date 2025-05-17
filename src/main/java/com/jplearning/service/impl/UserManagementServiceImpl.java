@@ -50,8 +50,6 @@ public class UserManagementServiceImpl implements UserManagementService {
 
         // Block user
         user.setBlocked(true);
-        user.setBlockReason(reason);
-        user.setBlockedAt(LocalDateTime.now());
 
         User updatedUser = userRepository.save(user);
 
@@ -74,8 +72,6 @@ public class UserManagementServiceImpl implements UserManagementService {
 
         // Unblock user
         user.setBlocked(false);
-        user.setBlockReason(null);
-        user.setBlockedAt(null);
 
         User updatedUser = userRepository.save(user);
 
@@ -145,8 +141,6 @@ public class UserManagementServiceImpl implements UserManagementService {
                 .roles(roles)
                 .enabled(user.isEnabled())
                 .blocked(user.isBlocked())
-                .blockReason(user.getBlockReason())
-                .blockedAt(user.getBlockedAt())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt());
 
