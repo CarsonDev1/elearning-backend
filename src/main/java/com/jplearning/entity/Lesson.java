@@ -1,6 +1,8 @@
 package com.jplearning.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -44,19 +46,23 @@ public class Lesson {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "module_id", nullable = false)
-    @JsonIgnore // Add this to prevent infinite recursion
+    @JsonBackReference // Added to break circular reference
+    @JsonIgnore // Ensure it's excluded from serialization
     private Module module;
 
     @OneToMany(mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore // Add this to prevent infinite recursion
+    @JsonManagedReference // Added to break circular reference
+    @JsonIgnore // Excluded from serialization
     private List<Resource> resources = new ArrayList<>();
 
     @OneToMany(mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore // Add this to prevent infinite recursion
+    @JsonManagedReference // Added to break circular reference
+    @JsonIgnore // Excluded from serialization
     private List<Exercise> exercises = new ArrayList<>();
 
     @OneToMany(mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore // Add this to prevent infinite recursion
+    @JsonManagedReference // Added to break circular reference
+    @JsonIgnore // Excluded from serialization
     private List<Discussion> discussions = new ArrayList<>();
 
     @CreationTimestamp
@@ -66,4 +72,19 @@ public class Lesson {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    // Override toString to avoid circular reference
+    @Override
+    public String toString() {
+        return "Lesson{" +
+                "id=" + id +
+                ", title='" + title + '\'' +
+                ", description='" + description + '\'' +
+                ", videoUrl='" + videoUrl + '\'' +
+                ", durationInMinutes=" + durationInMinutes +
+                ", position=" + position +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                '}';
+    }
 }

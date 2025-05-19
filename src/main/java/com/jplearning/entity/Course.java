@@ -1,5 +1,6 @@
 package com.jplearning.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -72,6 +73,7 @@ public class Course {
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference // Added to break circular reference
     @Builder.Default
     private List<Module> modules = new ArrayList<>();
 
@@ -80,5 +82,19 @@ public class Course {
         DRAFT, PENDING_APPROVAL, APPROVED, REJECTED
     }
 
-
+    // Override toString to avoid circular reference
+    @Override
+    public String toString() {
+        return "Course{" +
+                "id=" + id +
+                ", title='" + title + '\'' +
+                ", description='" + description + '\'' +
+                ", durationInMinutes=" + durationInMinutes +
+                ", lessonCount=" + lessonCount +
+                ", price=" + price +
+                ", status=" + status +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                '}';
+    }
 }

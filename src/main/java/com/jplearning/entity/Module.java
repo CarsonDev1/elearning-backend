@@ -1,6 +1,8 @@
 package com.jplearning.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -35,10 +37,12 @@ public class Module {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id", nullable = false)
-    @JsonIgnore // Add this to prevent infinite recursion
+    @JsonBackReference // Added to break circular reference
+    @JsonIgnore // Ensure it's excluded from serialization
     private Course course;
 
     @OneToMany(mappedBy = "module", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference // Added to break circular reference
     @Builder.Default
     private List<Lesson> lessons = new ArrayList<>();
 
@@ -49,4 +53,17 @@ public class Module {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    // Override toString to avoid circular reference
+    @Override
+    public String toString() {
+        return "Module{" +
+                "id=" + id +
+                ", title='" + title + '\'' +
+                ", durationInMinutes=" + durationInMinutes +
+                ", position=" + position +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                '}';
+    }
 }

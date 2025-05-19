@@ -59,9 +59,10 @@ public class LearningServiceImpl implements LearningService {
     }
 
     private Set<Long> getCompletedLessonIds(Long studentId, Long courseId) {
-        // In a real application, you would have a table to track completed lessons
-        // For now, we'll use a placeholder method
+        // Get lesson completions for this student and course
         List<LessonCompletion> completions = lessonCompletionRepository.findByStudentIdAndCourseId(studentId, courseId);
+
+        // Extract and return only the lesson IDs
         return completions.stream()
                 .map(completion -> completion.getLesson().getId())
                 .collect(Collectors.toSet());
@@ -75,9 +76,11 @@ public class LearningServiceImpl implements LearningService {
         // Build modules with lessons
         List<ModuleForLearningResponse> modules = new ArrayList<>();
 
+        // Process each module
         for (Module module : course.getModules()) {
-            List<LessonForLearningResponse> lessons = new ArrayList<>();
+            List<LessonForLearningResponse> lessonResponses = new ArrayList<>();
 
+            // Process each lesson
             for (Lesson lesson : module.getLessons()) {
                 boolean isLessonCompleted = completedLessonIds.contains(lesson.getId());
 
@@ -89,23 +92,28 @@ public class LearningServiceImpl implements LearningService {
                         .durationInMinutes(lesson.getDurationInMinutes())
                         .position(lesson.getPosition())
                         .isCompleted(isLessonCompleted)
-                        // Completion date would come from the LessonCompletion entity in a real application
                         .completedAt(isLessonCompleted ? getCompletionDate(lesson.getId(), enrollment.getStudent().getId()) : null)
                         .build();
 
-                lessons.add(lessonResponse);
+                lessonResponses.add(lessonResponse);
             }
+
+            // Sort lessons by position
+            lessonResponses.sort(Comparator.comparing(LessonForLearningResponse::getPosition));
 
             ModuleForLearningResponse moduleResponse = ModuleForLearningResponse.builder()
                     .id(module.getId())
                     .title(module.getTitle())
                     .durationInMinutes(module.getDurationInMinutes())
                     .position(module.getPosition())
-                    .lessons(lessons)
+                    .lessons(lessonResponses)
                     .build();
 
             modules.add(moduleResponse);
         }
+
+        // Sort modules by position
+        modules.sort(Comparator.comparing(ModuleForLearningResponse::getPosition));
 
         // Build tutor response
         TutorBriefResponse tutorResponse = TutorBriefResponse.builder()
@@ -115,13 +123,16 @@ public class LearningServiceImpl implements LearningService {
                 .teachingRequirements(course.getTutor().getTeachingRequirements())
                 .build();
 
+        // Get level name
+        String levelName = course.getLevel().getName();
+
         // Build main response
         return CourseForLearningResponse.builder()
                 .id(course.getId())
                 .title(course.getTitle())
                 .description(course.getDescription())
                 .durationInMinutes(course.getDurationInMinutes())
-                .level(course.getLevel().toString())
+                .level(levelName)
                 .courseOverview(course.getCourseOverview())
                 .courseContent(course.getCourseContent())
                 .thumbnailUrl(course.getThumbnailUrl())
@@ -138,7 +149,7 @@ public class LearningServiceImpl implements LearningService {
     }
 
     private LocalDateTime getCompletionDate(Long lessonId, Long studentId) {
-        // In a real application, you would retrieve this from the LessonCompletion entity
+        // Get completion date from LessonCompletion entity
         return lessonCompletionRepository.findByLessonIdAndStudentId(lessonId, studentId)
                 .map(LessonCompletion::getCompletedAt)
                 .orElse(null);

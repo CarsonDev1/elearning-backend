@@ -17,7 +17,7 @@ public class CourseForLearningResponse {
     private String title;
     private String description;
     private Integer durationInMinutes;
-    private String level;
+    private String level; // Changed from Object to String
     private String courseOverview;
     private String courseContent;
     private String thumbnailUrl;
@@ -35,4 +35,3 @@ public class CourseForLearningResponse {
     // Module and lesson details
     private List<ModuleForLearningResponse> modules;
 }
-
