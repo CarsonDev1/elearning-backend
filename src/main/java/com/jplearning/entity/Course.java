@@ -79,4 +79,6 @@ public class Course {
     public enum Status {
         DRAFT, PENDING_APPROVAL, APPROVED, REJECTED
     }
+
+
 }

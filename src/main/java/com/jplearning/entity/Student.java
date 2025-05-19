@@ -1,5 +1,6 @@
 package com.jplearning.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrimaryKeyJoinColumn;
@@ -22,14 +23,8 @@ import java.util.List;
 public class Student extends User {
     // Additional fields for Student can be added here
 
-    // The below fields would be used for course enrollment tracking
-    // which will be implemented later
-
-    /*
+    // Optional: If you want to include relationships but avoid cycles
     @OneToMany(mappedBy = "student")
+    @JsonIgnore // Prevent infinite recursion
     private List<Enrollment> enrollments = new ArrayList<>();
-
-    @OneToMany(mappedBy = "student")
-    private List<CourseReview> reviews = new ArrayList<>();
-    */
 }

@@ -47,17 +47,17 @@ public class CourseDetailResponse {
         this.status = course.getStatus();
         this.createdAt = course.getCreatedAt();
         this.updatedAt = course.getUpdatedAt();
-        this.enrolled = enrolled;
+        this.enrolled = isEnrolled;
 
         // Xử lý module dựa trên trạng thái đăng ký
         if (course.getModules() != null) {
-            if (enrolled) {
-                // Nếu đã đăng ký, hiển thị toàn bộ thông tin module và bài học
+            if (isEnrolled) {
+                // If enrolled, show full module content
                 this.modules = course.getModules().stream()
                         .map(module -> new ModulePreviewResponse(module, true))
                         .collect(Collectors.toList());
             } else {
-                // Nếu chưa đăng ký, chỉ hiển thị thông tin tóm tắt và bài học giới thiệu
+                // If not enrolled, show preview only
                 this.modules = course.getModules().stream()
                         .map(module -> new ModulePreviewResponse(module, false))
                         .collect(Collectors.toList());

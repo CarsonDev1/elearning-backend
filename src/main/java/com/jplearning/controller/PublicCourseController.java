@@ -85,22 +85,29 @@ public class PublicCourseController {
     public ResponseEntity<CourseDetailResponse> getCourseById(@PathVariable Long courseId) {
         // Lấy id của học viên hiện tại (nếu đã đăng nhập)
         Long studentId = getCurrentStudentId();
+        System.out.println("Current student ID: " + studentId);
 
         // Lấy thông tin khóa học kèm trạng thái đăng ký
         CourseResponse course;
+        boolean isEnrolled = false;
+
         if (studentId != null) {
-            course = courseService.getCourseWithEnrollmentStatus(courseId, studentId);
+            // Directly check enrollment status here
+            isEnrolled = enrollmentService.isStudentEnrolledInCourse(studentId, courseId);
+            System.out.println("Is enrolled: " + isEnrolled); // Debug log
+
+            course = courseService.getCourseById(courseId);
+            course.setEnrolled(isEnrolled);
         } else {
             course = courseService.getCourseById(courseId);
         }
-
         // Đảm bảo khóa học đã được phê duyệt để hiển thị công khai
         if (course.getStatus() != Course.Status.APPROVED) {
             throw new ResourceNotFoundException("Course not found with id: " + courseId);
         }
 
         // Tạo phản hồi dựa trên trạng thái đăng ký
-        CourseDetailResponse response = new CourseDetailResponse(course, course.isEnrolled());
+        CourseDetailResponse response = new CourseDetailResponse(course, isEnrolled);
 
         return ResponseEntity.ok(response);
     }

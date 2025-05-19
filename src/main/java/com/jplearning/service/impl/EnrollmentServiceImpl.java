@@ -49,11 +49,10 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     public boolean isStudentEnrolledInCourse(Long studentId, Long courseId) {
-        // Tìm kiếm enrollment dựa trên studentId và courseId
         Optional<Enrollment> enrollment = enrollmentRepository.findByStudentIdAndCourseId(studentId, courseId);
-
-        // Trả về true nếu enrollment tồn tại
-        return enrollment.isPresent();
+        boolean isEnrolled = enrollment.isPresent();
+        System.out.println("Checking enrollment: studentId=" + studentId + ", courseId=" + courseId + ", isEnrolled=" + isEnrolled);
+        return isEnrolled;
     }
 
     @Override
@@ -95,6 +94,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
         // Save enrollment
         Enrollment savedEnrollment = enrollmentRepository.save(enrollment);
+        System.out.println("Enrollment saved with ID: " + savedEnrollment.getId());
 
         // Return response
         return mapToResponse(savedEnrollment);
@@ -155,6 +155,34 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         }
 
         return enrollments;
+    }
+
+    public void debugEnrollmentCheck(Long studentId, Long courseId) {
+        System.out.println("\n--- DEBUGGING ENROLLMENT CHECK ---");
+        System.out.println("StudentId: " + studentId);
+        System.out.println("CourseId: " + courseId);
+
+        try {
+            // Check direct SQL
+            Optional<Enrollment> enrollment = enrollmentRepository.findByStudentIdAndCourseId(studentId, courseId);
+            System.out.println("Enrollment found: " + enrollment.isPresent());
+
+            // Check with entities
+            Student student = studentRepository.findById(studentId).orElse(null);
+            Course course = courseRepository.findById(courseId).orElse(null);
+
+            System.out.println("Student null? " + (student == null));
+            System.out.println("Course null? " + (course == null));
+
+            if (student != null && course != null) {
+                Optional<Enrollment> enrollmentByEntities = enrollmentRepository.findByStudentAndCourse(student, course);
+                System.out.println("Enrollment found by entities: " + enrollmentByEntities.isPresent());
+            }
+        } catch (Exception e) {
+            System.out.println("Error during debug: " + e.getMessage());
+            e.printStackTrace();
+        }
+        System.out.println("--- END DEBUGGING ---\n");
     }
 
     @Override
@@ -269,6 +297,8 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         CourseResponse courseResponse = null;
         if (enrollment.getCourse() != null) {
             courseResponse = courseMapper.courseToResponse(enrollment.getCourse());
+            // Set enrolled to true since this is an enrollment
+            courseResponse.setEnrolled(true);
         }
 
         Long comboId = enrollment.getCombo() != null ? enrollment.getCombo().getId() : null;

@@ -388,6 +388,14 @@ public class CourseServiceImpl implements CourseService {
         });
     }
 
+    private CourseResponse checkEnrollmentStatus(CourseResponse courseResponse, Long studentId) {
+        if (studentId != null) {
+            boolean isEnrolled = enrollmentService.isStudentEnrolledInCourse(studentId, courseResponse.getId());
+            courseResponse.setEnrolled(isEnrolled);
+        }
+        return courseResponse;
+    }
+
     @Override
     public Page<CourseResponse> searchCoursesByTitle(String title, Pageable pageable) {
         Page<Course> courses = courseRepository.findByTitleContainingIgnoreCaseAndStatus(

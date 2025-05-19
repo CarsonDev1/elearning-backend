@@ -1,5 +1,6 @@
 package com.jplearning.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -43,15 +44,19 @@ public class Lesson {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "module_id", nullable = false)
+    @JsonIgnore // Add this to prevent infinite recursion
     private Module module;
 
     @OneToMany(mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore // Add this to prevent infinite recursion
     private List<Resource> resources = new ArrayList<>();
 
     @OneToMany(mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore // Add this to prevent infinite recursion
     private List<Exercise> exercises = new ArrayList<>();
 
     @OneToMany(mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore // Add this to prevent infinite recursion
     private List<Discussion> discussions = new ArrayList<>();
 
     @CreationTimestamp

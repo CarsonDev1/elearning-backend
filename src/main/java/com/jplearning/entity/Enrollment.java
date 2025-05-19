@@ -1,5 +1,6 @@
 package com.jplearning.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,10 +26,12 @@ public class Enrollment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", nullable = false)
+    @JsonIgnore // Prevent infinite recursion
     private Student student;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id", nullable = false)
+    @JsonIgnore // Prevent infinite recursion
     private Course course;
 
     @Column(name = "progress_percentage")
@@ -51,6 +54,7 @@ public class Enrollment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payment_id")
+    @JsonIgnore // Prevent infinite recursion
     private Payment payment;
 
     @Column(name = "certificate_id")
@@ -64,6 +68,7 @@ public class Enrollment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "combo_id")
+    @JsonIgnore // Prevent infinite recursion
     private CourseCombo combo;
 
     @Column(name = "voucher_code")
