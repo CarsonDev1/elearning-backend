@@ -136,4 +136,6 @@ public interface CourseService {
      * @throws IOException If an I/O error occurs
      */
     CourseResponse uploadThumbnail(Long courseId, MultipartFile file, Long tutorId) throws IOException;
+
+    public CourseResponse withdrawCourse(Long courseId);
 }

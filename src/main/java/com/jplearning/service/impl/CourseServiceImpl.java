@@ -665,4 +665,26 @@ public class CourseServiceImpl implements CourseService {
             throw new BadRequestException("Cannot submit course: " + String.join(", ", errors));
         }
     }
+
+    @Override
+    @Transactional
+    public CourseResponse withdrawCourse(Long courseId) {
+        // Get course
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + courseId));
+
+        // Validate current status
+        if (course.getStatus() != Course.Status.APPROVED && course.getStatus() != Course.Status.PENDING_APPROVAL) {
+            throw new BadRequestException("Course is not in a state that can be withdrawn. Current status: " + course.getStatus());
+        }
+
+        // Change status to DRAFT
+        course.setStatus(Course.Status.DRAFT);
+
+        // Save updated course
+        Course updatedCourse = courseRepository.save(course);
+
+        // Return response
+        return courseMapper.courseToResponse(updatedCourse);
+    }
 }

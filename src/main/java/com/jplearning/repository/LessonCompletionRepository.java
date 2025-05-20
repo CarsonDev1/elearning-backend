@@ -19,4 +19,6 @@ public interface LessonCompletionRepository extends JpaRepository<LessonCompleti
 
     @Query("SELECT COUNT(lc) FROM LessonCompletion lc WHERE lc.student.id = :studentId AND lc.course.id = :courseId")
     Long countByStudentIdAndCourseId(Long studentId, Long courseId);
+
+    int countByLessonId(Long lessonId);
 }

@@ -34,4 +34,5 @@ public class CourseForLearningResponse {
 
     // Module and lesson details
     private List<ModuleForLearningResponse> modules;
+
 }

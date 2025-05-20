@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -20,4 +21,7 @@ public class LessonForLearningResponse {
     private Integer position;
     private boolean isCompleted;
     private LocalDateTime completedAt;
+
+    private List<ResourceResponse> resources;
+    private List<ExerciseResponse> exercises;
 }

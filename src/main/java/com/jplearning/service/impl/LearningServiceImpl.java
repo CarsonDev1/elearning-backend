@@ -84,6 +84,71 @@ public class LearningServiceImpl implements LearningService {
             for (Lesson lesson : module.getLessons()) {
                 boolean isLessonCompleted = completedLessonIds.contains(lesson.getId());
 
+                List<ResourceResponse> resourceResponses = new ArrayList<>();
+                if (lesson.getResources() != null && !lesson.getResources().isEmpty()) {
+                    resourceResponses = lesson.getResources().stream()
+                            .map(resource -> ResourceResponse.builder()
+                                    .id(resource.getId())
+                                    .title(resource.getTitle())
+                                    .description(resource.getDescription())
+                                    .fileUrl(resource.getFileUrl())
+                                    .fileType(resource.getFileType())
+                                    .createdAt(resource.getCreatedAt())
+                                    .updatedAt(resource.getUpdatedAt())
+                                    .build())
+                            .collect(Collectors.toList());
+                }
+
+                // Map exercises for this lesson
+                List<ExerciseResponse> exerciseResponses = new ArrayList<>();
+                if (lesson.getExercises() != null && !lesson.getExercises().isEmpty()) {
+                    exerciseResponses = lesson.getExercises().stream()
+                            .map(exercise -> {
+                                List<QuestionResponse> questionResponses = new ArrayList<>();
+                                if (exercise.getQuestions() != null && !exercise.getQuestions().isEmpty()) {
+                                    questionResponses = exercise.getQuestions().stream()
+                                            .map(question -> {
+                                                List<OptionResponse> optionResponses = new ArrayList<>();
+                                                if (question.getOptions() != null && !question.getOptions().isEmpty()) {
+                                                    optionResponses = question.getOptions().stream()
+                                                            .map(option -> OptionResponse.builder()
+                                                                    .id(option.getId())
+                                                                    .content(option.getContent())
+                                                                    .correct(option.isCorrect())
+                                                                    .createdAt(option.getCreatedAt())
+                                                                    .updatedAt(option.getUpdatedAt())
+                                                                    .build())
+                                                            .collect(Collectors.toList());
+                                                }
+
+                                                return QuestionResponse.builder()
+                                                        .id(question.getId())
+                                                        .content(question.getContent())
+                                                        .hint(question.getHint())
+                                                        .correctAnswer(question.getCorrectAnswer())
+                                                        .answerExplanation(question.getAnswerExplanation())
+                                                        .points(question.getPoints())
+                                                        .options(optionResponses)
+                                                        .createdAt(question.getCreatedAt())
+                                                        .updatedAt(question.getUpdatedAt())
+                                                        .build();
+                                            })
+                                            .collect(Collectors.toList());
+                                }
+
+                                return ExerciseResponse.builder()
+                                        .id(exercise.getId())
+                                        .title(exercise.getTitle())
+                                        .description(exercise.getDescription())
+                                        .type(exercise.getType())
+                                        .questions(questionResponses)
+                                        .createdAt(exercise.getCreatedAt())
+                                        .updatedAt(exercise.getUpdatedAt())
+                                        .build();
+                            })
+                            .collect(Collectors.toList());
+                }
+
                 LessonForLearningResponse lessonResponse = LessonForLearningResponse.builder()
                         .id(lesson.getId())
                         .title(lesson.getTitle())
@@ -93,6 +158,8 @@ public class LearningServiceImpl implements LearningService {
                         .position(lesson.getPosition())
                         .isCompleted(isLessonCompleted)
                         .completedAt(isLessonCompleted ? getCompletionDate(lesson.getId(), enrollment.getStudent().getId()) : null)
+                        .resources(resourceResponses)
+                        .exercises(exerciseResponses)
                         .build();
 
                 lessonResponses.add(lessonResponse);

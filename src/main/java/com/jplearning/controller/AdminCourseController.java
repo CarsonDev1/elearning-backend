@@ -102,4 +102,15 @@ public class AdminCourseController {
         courseService.deleteCourse(courseId, null);
         return ResponseEntity.noContent().build();
     }
+
+    @PutMapping("/{courseId}/withdraw")
+    @Operation(
+            summary = "Withdraw a course",
+            description = "Withdraw a course from approved/pending state back to draft state",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<CourseResponse> withdrawCourse(@PathVariable Long courseId) {
+        return ResponseEntity.ok(courseService.withdrawCourse(courseId));
+    }
 }
