@@ -318,6 +318,7 @@ public class VoucherServiceImpl implements VoucherService {
                             .level(courseMapper.levelToResponse(course.getLevel()))
                             .price(course.getPrice())
                             .thumbnailUrl(course.getThumbnailUrl())
+                            .countBuy(course.getCountBuy())
                             .tutor(courseMapper.tutorToBriefResponse(course.getTutor()))
                             .build())
                     .collect(Collectors.toList());

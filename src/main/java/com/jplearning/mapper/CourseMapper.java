@@ -47,6 +47,7 @@ public interface CourseMapper {
     @Mapping(target = "level", source = "levelId", qualifiedByName = "idToLevel")
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "lessonCount", ignore = true)
+    @Mapping(target = "countBuy", constant = "0")
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "modules", expression = "java(new ArrayList<>())")
@@ -99,6 +100,7 @@ public interface CourseMapper {
     @Mapping(target = "tutor", ignore = true)
     @Mapping(target = "level", ignore = true) // Level is handled separately in service
     @Mapping(target = "status", ignore = true)
+    @Mapping(target = "countBuy", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "modules", ignore = true)
     void updateCourseFromRequest(CourseRequest request, @MappingTarget Course course);

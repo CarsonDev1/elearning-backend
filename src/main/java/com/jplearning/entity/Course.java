@@ -56,6 +56,9 @@ public class Course {
     @Column(name = "includes_description", columnDefinition = "TEXT")
     private String includesDescription;
 
+    @Column(name = "count_buy", nullable = false)
+    private Integer countBuy = 0;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "tutor_id", nullable = false)
     private Tutor tutor;

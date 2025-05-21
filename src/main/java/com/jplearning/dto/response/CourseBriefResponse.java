@@ -1,6 +1,5 @@
 package com.jplearning.dto.response;
 
-import com.jplearning.entity.Course;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,4 +18,5 @@ public class CourseBriefResponse {
     private BigDecimal price;
     private String thumbnailUrl;
     private TutorBriefResponse tutor;
+    private Integer countBuy;
 }

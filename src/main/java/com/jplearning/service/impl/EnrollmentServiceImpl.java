@@ -87,14 +87,13 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 .payment(payment)
                 .build();
 
-//        // Set expiry date if applicable
-//        if (course.getAccessPeriodMonths() != null && course.getAccessPeriodMonths() > 0) {
-//            enrollment.setExpiryDate(LocalDateTime.now().plusMonths(course.getAccessPeriodMonths()));
-//        }
-
         // Save enrollment
         Enrollment savedEnrollment = enrollmentRepository.save(enrollment);
         System.out.println("Enrollment saved with ID: " + savedEnrollment.getId());
+
+        // Increment course countBuy and save
+        course.setCountBuy(course.getCountBuy() != null ? course.getCountBuy() + 1 : 1);
+        courseRepository.save(course);
 
         // Return response
         return mapToResponse(savedEnrollment);
@@ -151,11 +150,18 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
             // Save enrollment
             Enrollment savedEnrollment = enrollmentRepository.save(enrollment);
+
+            // Increment course countBuy and save
+            course.setCountBuy(course.getCountBuy() != null ? course.getCountBuy() + 1 : 1);
+            courseRepository.save(course);
+
             enrollments.add(mapToResponse(savedEnrollment));
         }
 
         return enrollments;
     }
+
+    // Rest of the methods remain unchanged
 
     public void debugEnrollmentCheck(Long studentId, Long courseId) {
         System.out.println("\n--- DEBUGGING ENROLLMENT CHECK ---");

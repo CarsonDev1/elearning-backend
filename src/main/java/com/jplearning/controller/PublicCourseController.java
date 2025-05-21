@@ -19,6 +19,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/courses")
 @Tag(name = "Public Course APIs", description = "APIs for accessing public course information")
@@ -53,6 +55,12 @@ public class PublicCourseController {
 
         // Nếu chưa đăng nhập, trả về danh sách bình thường
         return ResponseEntity.ok(courseService.getApprovedCourses(pageable));
+    }
+
+    @GetMapping("/popular")
+    @Operation(summary = "Get popular courses", description = "Get top 10 courses by purchase count")
+    public ResponseEntity<List<CourseResponse>> getPopularCourses() {
+        return ResponseEntity.ok(courseService.getTopCoursesByPurchaseCount());
     }
 
     @GetMapping("/search")

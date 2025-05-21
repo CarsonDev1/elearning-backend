@@ -203,6 +203,7 @@ public class LearningServiceImpl implements LearningService {
                 .courseOverview(course.getCourseOverview())
                 .courseContent(course.getCourseContent())
                 .thumbnailUrl(course.getThumbnailUrl())
+                .countBuy(course.getCountBuy()) // Added countBuy field
                 .tutor(tutorResponse)
                 .enrollmentId(enrollment.getId())
                 .progressPercentage(enrollment.getProgressPercentage())

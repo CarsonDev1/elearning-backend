@@ -218,6 +218,7 @@ public class ComboServiceImpl implements ComboService {
                         .price(course.getPrice())
                         .thumbnailUrl(course.getThumbnailUrl())
                         .tutor(courseMapper.tutorToBriefResponse(course.getTutor()))
+                        .countBuy(course.getCountBuy()) // Include countBuy field
                         .build())
                 .collect(Collectors.toList());
 

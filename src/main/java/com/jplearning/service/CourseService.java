@@ -138,4 +138,11 @@ public interface CourseService {
     CourseResponse uploadThumbnail(Long courseId, MultipartFile file, Long tutorId) throws IOException;
 
     public CourseResponse withdrawCourse(Long courseId);
+
+    /**
+     * Get top popular courses based on purchase count
+     *
+     * @return List of top 10 most purchased courses
+     */
+    List<CourseResponse> getTopCoursesByPurchaseCount();
 }

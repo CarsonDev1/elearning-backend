@@ -143,6 +143,18 @@ public class CourseServiceImpl implements CourseService {
         return courseMapper.courseToResponse(savedCourse);
     }
 
+
+    @Override
+    public List<CourseResponse> getTopCoursesByPurchaseCount() {
+        // Get top 10 courses by purchase count (countBuy) with APPROVED status
+        List<Course> topCourses = courseRepository.findTop10ByStatusOrderByCountBuyDescCreatedAtDesc(Course.Status.APPROVED);
+
+        // Map to responses
+        return topCourses.stream()
+                .map(courseMapper::courseToResponse)
+                .collect(Collectors.toList());
+    }
+
     private void buildCourseObjectGraph(List<ModuleRequest> moduleRequests, Course course) {
         int modulePosition = 1;
         for (ModuleRequest moduleRequest : moduleRequests) {

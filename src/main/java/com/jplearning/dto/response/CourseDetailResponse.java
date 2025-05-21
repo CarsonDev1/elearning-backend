@@ -26,6 +26,7 @@ public class CourseDetailResponse {
     private String includesDescription;
     private TutorBriefResponse tutor;
     private Course.Status status;
+    private Integer countBuy;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<ModulePreviewResponse> modules = new ArrayList<>();
@@ -45,6 +46,7 @@ public class CourseDetailResponse {
         this.includesDescription = course.getIncludesDescription();
         this.tutor = course.getTutor();
         this.status = course.getStatus();
+        this.countBuy = course.getCountBuy();
         this.createdAt = course.getCreatedAt();
         this.updatedAt = course.getUpdatedAt();
         this.enrolled = isEnrolled;
@@ -65,4 +67,3 @@ public class CourseDetailResponse {
         }
     }
 }
-

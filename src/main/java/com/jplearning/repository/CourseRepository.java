@@ -20,6 +20,8 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
     List<Course> findTop5ByOrderByCreatedAtDesc();
 
+    List<Course> findTop10ByStatusOrderByCountBuyDescCreatedAtDesc(Course.Status status);
+
     Page<Course> findByTitleContainingIgnoreCase(String title, Pageable pageable);
 
     Page<Course> findByTitleContainingIgnoreCaseAndStatus(String title, Course.Status status, Pageable pageable);

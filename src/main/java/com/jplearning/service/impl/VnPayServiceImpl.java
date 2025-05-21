@@ -407,6 +407,7 @@ public class VnPayServiceImpl implements VnPayService {
 
                 if (!courses.isEmpty()) {
                     Course course = courses.get(0);
+                    // Enroll student and increment countBuy via the enrollment service
                     enrollmentService.enrollStudentInCourse(student.getId(), course.getId(), payment);
                 }
             } else if (orderInfo.contains("Payment for course combo:")) {
@@ -416,6 +417,7 @@ public class VnPayServiceImpl implements VnPayService {
 
                 if (!combos.isEmpty()) {
                     CourseCombo combo = combos.get(0);
+                    // Enroll student in combo - this will increment countBuy for each course
                     enrollmentService.enrollStudentInCombo(student.getId(), combo.getId(), payment);
                 }
             }

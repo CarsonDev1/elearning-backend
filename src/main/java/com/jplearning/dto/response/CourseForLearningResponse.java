@@ -22,6 +22,7 @@ public class CourseForLearningResponse {
     private String courseContent;
     private String thumbnailUrl;
     private TutorBriefResponse tutor;
+    private Integer countBuy;
 
     // Enrollment info
     private Long enrollmentId;
@@ -34,5 +35,4 @@ public class CourseForLearningResponse {
 
     // Module and lesson details
     private List<ModuleForLearningResponse> modules;
-
 }

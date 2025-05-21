@@ -28,6 +28,7 @@ public class CourseResponse {
     private String includesDescription;
     private TutorBriefResponse tutor;
     private Course.Status status;
+    private Integer countBuy;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<ModuleResponse> modules;
