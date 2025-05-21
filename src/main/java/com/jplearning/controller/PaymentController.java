@@ -7,6 +7,12 @@ import com.jplearning.security.services.UserDetailsImpl;
 import com.jplearning.service.PaymentService;
 import com.jplearning.service.VnPayService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -54,9 +60,31 @@ public class PaymentController {
     @GetMapping("/vnpay-return")
     @Operation(
             summary = "VNPay return",
-            description = "Process VNPay payment return"
+            description = "Process VNPay payment return - This endpoint receives query parameters from VNPAY"
     )
-    public ResponseEntity<String> processVnPayReturn(HttpServletRequest request) {
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Payment processed successfully")
+    })
+    @Parameters({
+            @Parameter(name = "vnp_ResponseCode", description = "Response code from VNPAY", required = true, in = ParameterIn.QUERY),
+            @Parameter(name = "vnp_TxnRef", description = "Transaction reference", required = true, in = ParameterIn.QUERY),
+            @Parameter(name = "vnp_Amount", description = "Payment amount", required = true, in = ParameterIn.QUERY),
+            @Parameter(name = "vnp_OrderInfo", description = "Order information", required = true, in = ParameterIn.QUERY),
+            @Parameter(name = "vnp_BankCode", description = "Bank code", required = false, in = ParameterIn.QUERY),
+            @Parameter(name = "vnp_BankTranNo", description = "Bank transaction number", required = false, in = ParameterIn.QUERY),
+            @Parameter(name = "vnp_CardType", description = "Card type", required = false, in = ParameterIn.QUERY),
+            @Parameter(name = "vnp_PayDate", description = "Payment date", required = false, in = ParameterIn.QUERY),
+            @Parameter(name = "vnp_TransactionNo", description = "Transaction number", required = false, in = ParameterIn.QUERY),
+            @Parameter(name = "vnp_SecureHash", description = "Security hash for verification", required = true, in = ParameterIn.QUERY)
+    })
+    public ResponseEntity<String> processVnPayReturn(
+            HttpServletRequest request,
+            @RequestParam(required = false) String vnp_ResponseCode,
+            @RequestParam(required = false) String vnp_TxnRef,
+            @RequestParam(required = false) String vnp_Amount,
+            @RequestParam(required = false) String vnp_OrderInfo,
+            @RequestParam(required = false) String vnp_SecureHash
+    ) {
         // Get all parameters from the request
         Map<String, String> vnpParams = new HashMap<>();
         Enumeration<String> paramNames = request.getParameterNames();

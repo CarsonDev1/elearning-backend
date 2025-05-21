@@ -16,6 +16,7 @@ import com.jplearning.repository.StudentRepository;
 import com.jplearning.service.EnrollmentService;
 import com.jplearning.service.VnPayService;
 import com.jplearning.service.VoucherService;
+import com.nimbusds.jose.shaded.gson.Gson;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -172,6 +173,9 @@ public class VnPayServiceImpl implements VnPayService {
 
         Payment payment = optionalPayment.get();
 
+        String paymentResponseStr = limitMapToString(vnpParams);
+        payment.setPaymentResponse(paymentResponseStr);
+
         // Store response data
         payment.setPaymentResponse(vnpParams.toString());
 
@@ -192,6 +196,27 @@ public class VnPayServiceImpl implements VnPayService {
             paymentRepository.save(payment);
             return "Payment failed with code: " + vnp_ResponseCode;
         }
+    }
+
+    private String limitMapToString(Map<String, String> map) {
+        // Option 1: Convert to JSON with a maximum length
+        String json = new Gson().toJson(map);
+        if (json.length() > 1000) {  // Set a reasonable limit
+            return json.substring(0, 1000) + "..."; // Truncate
+        }
+        return json;
+
+        // Option 2: Store only essential fields
+    /*
+    Map<String, String> essentialParams = new HashMap<>();
+    String[] keysToKeep = {"vnp_ResponseCode", "vnp_TxnRef", "vnp_Amount", "vnp_OrderInfo"};
+    for (String key : keysToKeep) {
+        if (map.containsKey(key)) {
+            essentialParams.put(key, map.get(key));
+        }
+    }
+    return new Gson().toJson(essentialParams);
+    */
     }
 
     @Override
@@ -278,17 +303,19 @@ public class VnPayServiceImpl implements VnPayService {
 
     private boolean validateHash(Map<String, String> vnpParams) {
         try {
-            // Remove hash from params
-            String vnp_SecureHash = vnpParams.get("vnp_SecureHash");
+            // Lấy chữ ký từ tham số
+            String vnp_SecureHash = vnpParams.getOrDefault("vnp_SecureHash", "");
+
+            // Tạo map mới loại bỏ các tham số không cần thiết cho tính hash
             Map<String, String> validParams = new HashMap<>(vnpParams);
             validParams.remove("vnp_SecureHash");
             validParams.remove("vnp_SecureHashType");
 
-            // Generate hash from params
+            // Tạo lại chữ ký từ tham số hợp lệ
             String generatedHash = generateHash(validParams);
 
-            // Compare hashes
-            return generatedHash.equals(vnp_SecureHash);
+            // So sánh chữ ký
+            return generatedHash.equalsIgnoreCase(vnp_SecureHash);
         } catch (Exception e) {
             logger.error("Error validating VNPay hash", e);
             return false;
@@ -297,31 +324,32 @@ public class VnPayServiceImpl implements VnPayService {
 
     private String generateHash(Map<String, String> params) {
         try {
-            // Sort params by key
+            // Sắp xếp param theo key
             List<String> fieldNames = new ArrayList<>(params.keySet());
             Collections.sort(fieldNames);
 
-            // Build hash data
+            // Xây dựng chuỗi hash data đúng định dạng VNPAY
             StringBuilder hashData = new StringBuilder();
             for (String fieldName : fieldNames) {
                 String fieldValue = params.get(fieldName);
                 if (fieldValue != null && !fieldValue.isEmpty()) {
-                    hashData.append(fieldName).append("=").append(fieldValue).append("&");
+                    // Đảm bảo không có kí tự & ở cuối
+                    hashData.append(fieldName).append("=").append(URLEncoder.encode(fieldValue, StandardCharsets.UTF_8.toString())).append("&");
                 }
             }
 
-            // Remove last '&'
+            // Cắt bỏ kí tự & cuối cùng
             if (hashData.length() > 0) {
                 hashData.setLength(hashData.length() - 1);
             }
 
-            // Generate HMAC_SHA512 hash
+            // Sử dụng đúng thuật toán HMAC_SHA512
             Mac hmacSha512 = Mac.getInstance("HmacSHA512");
             SecretKeySpec secretKey = new SecretKeySpec(vnPayConfig.getHashSecret().getBytes(), "HmacSHA512");
             hmacSha512.init(secretKey);
             byte[] hashBytes = hmacSha512.doFinal(hashData.toString().getBytes(StandardCharsets.UTF_8));
 
-            // Convert to hex
+            // Chuyển về hex string
             return bytesToHex(hashBytes);
         } catch (Exception e) {
             logger.error("Error generating VNPay hash", e);
@@ -346,7 +374,9 @@ public class VnPayServiceImpl implements VnPayService {
     }
 
     private String generateVnPayDate() {
-        return new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+        formatter.setTimeZone(TimeZone.getTimeZone("GMT+7")); // Múi giờ Việt Nam
+        return formatter.format(new Date());
     }
 
     private String mapToJson(Map<String, String> map) {

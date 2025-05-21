@@ -39,7 +39,7 @@ public class Payment {
     @Column(nullable = false)
     private PaymentMethod method;
 
-    @Column(name = "payment_response")
+    @Column(name = "payment_response", columnDefinition = "TEXT")
     private String paymentResponse;
 
     @ManyToOne(fetch = FetchType.LAZY)

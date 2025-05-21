@@ -41,4 +41,12 @@ public interface CloudinaryService {
      * @throws IOException If an I/O error occurs
      */
     Map<String, String> uploadVideo(MultipartFile file) throws IOException;
+
+    /**
+     * Generate a signed URL for a resource
+     *
+     * @param publicId Public ID of the resource
+     * @return Signed URL with temporary access
+     */
+    String generateSignedUrl(String publicId);
 }

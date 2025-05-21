@@ -1,6 +1,7 @@
 package com.jplearning.service.impl;
 
 import com.cloudinary.Cloudinary;
+import com.cloudinary.Transformation;
 import com.cloudinary.utils.ObjectUtils;
 import com.jplearning.service.CloudinaryService;
 import org.slf4j.Logger;
@@ -26,7 +27,18 @@ public class CloudinaryServiceImpl implements CloudinaryService {
     public Map<String, String> uploadFile(MultipartFile multipartFile) throws IOException {
         try {
             File file = convertMultipartToFile(multipartFile);
-            Map<String, Object> uploadResult = cloudinary.uploader().upload(file, ObjectUtils.emptyMap());
+
+            Map<String, Object> params = new HashMap<>();
+
+            // Check if file is a PDF or other document type
+            String contentType = multipartFile.getContentType();
+            if (contentType != null &&
+                    (contentType.equals("application/pdf") ||
+                            contentType.startsWith("application/"))) {
+                params.put("resource_type", "raw");
+            }
+
+            Map<String, Object> uploadResult = cloudinary.uploader().upload(file, params);
 
             boolean isDeleted = file.delete();
             if (!isDeleted) {
@@ -136,5 +148,33 @@ public class CloudinaryServiceImpl implements CloudinaryService {
         }
 
         return result;
+    }
+
+    @Override
+    public String generateSignedUrl(String publicId) {
+        try {
+            // Configure signed URL parameters
+            Map<String, Object> params = new HashMap<>();
+            params.put("public_id", publicId);
+            params.put("format", "pdf"); // Adjust based on file type
+
+            // Set expiration time (e.g., 1 hour from now)
+            long expireAt = System.currentTimeMillis() / 1000 + 3600;
+            params.put("expires_at", expireAt);
+
+            // Generate signed URL
+            String signedUrl = cloudinary.url()
+                    .resourceType("raw")
+                    .transformation(new Transformation().fetchFormat("pdf"))
+//                    .format("pdf") // Adjust based on file type
+                    .signed(true)
+                    .signed(params.isEmpty())
+                    .generate(publicId);
+
+            return signedUrl;
+        } catch (Exception e) {
+            logger.error("Failed to generate signed URL for resource: {}", publicId, e);
+            throw new RuntimeException("Failed to generate download URL", e);
+        }
     }
 }

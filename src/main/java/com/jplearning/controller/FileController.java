@@ -1,5 +1,6 @@
 package com.jplearning.controller;
 
+import com.jplearning.entity.Resource;
 import com.jplearning.exception.BadRequestException;
 import com.jplearning.service.CloudinaryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,6 +12,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -184,4 +187,6 @@ public class FileController {
             throw new BadRequestException("Document size should not exceed 20MB");
         }
     }
+
+
 }

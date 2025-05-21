@@ -507,8 +507,18 @@ public class CourseServiceImpl implements CourseService {
     private void saveLessons(List<LessonRequest> lessonRequests, Module module) {
         int position = 1;
         for (LessonRequest lessonRequest : lessonRequests) {
+
+            if (lessonRequest.getPosition() == null) {
+                // Tìm vị trí lớn nhất hiện tại và tăng lên 1
+                int maxPosition = module.getLessons().stream()
+                        .mapToInt(Lesson::getPosition)
+                        .max()
+                        .orElse(0);
+                lessonRequest.setPosition(maxPosition + 1);
+            }
+
             // Set position to ensure order
-            lessonRequest.setPosition(position++);
+//            lessonRequest.setPosition(position++);
 
             // Create lesson
             Lesson lesson = courseMapper.requestToLesson(lessonRequest);
