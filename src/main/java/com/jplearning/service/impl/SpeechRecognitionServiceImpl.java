@@ -9,7 +9,6 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
@@ -34,55 +33,13 @@ public class SpeechRecognitionServiceImpl implements SpeechRecognitionService {
 
     @Override
     public String recognizeSpeech(MultipartFile audioFile, String language) throws IOException {
-        // Default to Japanese if not specified
-        if (language == null || language.isEmpty()) {
-            language = "ja-JP";
-        }
+        // Since we're using Web Speech API on frontend, this method will receive
+        // the recognized text directly from the frontend
+        // For now, return a mock response indicating that recognition should be done on frontend
+        logger.info("Speech recognition request received for language: {}", language);
 
-        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-            // Prepare request to SpeechNote API
-            HttpPost httpPost = new HttpPost(speechConfig.getSpeechnoteEndpoint());
-
-            // Add API key as header
-            httpPost.setHeader("X-API-Key", speechConfig.getSpeechnoteApiKey());
-
-            // Prepare multipart form data
-            MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-            builder.addBinaryBody("audio", audioFile.getInputStream(),
-                    ContentType.APPLICATION_OCTET_STREAM, audioFile.getOriginalFilename());
-            builder.addTextBody("language", language);
-
-            // Set entity
-            HttpEntity multipart = builder.build();
-            httpPost.setEntity(multipart);
-
-            // Execute request
-            CloseableHttpResponse response = httpClient.execute(httpPost);
-
-            // Process response
-            String responseString = EntityUtils.toString(response.getEntity());
-
-            // Parse JSON response
-            JsonNode rootNode = objectMapper.readTree(responseString);
-
-            // Extract recognized text
-            if (rootNode.has("results") && rootNode.get("results").isArray() &&
-                    rootNode.get("results").size() > 0) {
-
-                JsonNode firstResult = rootNode.get("results").get(0);
-                if (firstResult.has("alternatives") && firstResult.get("alternatives").isArray() &&
-                        firstResult.get("alternatives").size() > 0) {
-
-                    JsonNode firstAlternative = firstResult.get("alternatives").get(0);
-                    if (firstAlternative.has("transcript")) {
-                        return firstAlternative.get("transcript").asText();
-                    }
-                }
-            }
-
-            // Return empty string if no text recognized
-            return "";
-        }
+        // This is a placeholder - actual recognition will be done on frontend
+        return "Recognition should be done using Web Speech API on frontend";
     }
 
     @Override
@@ -92,8 +49,8 @@ public class SpeechRecognitionServiceImpl implements SpeechRecognitionService {
         }
 
         // Normalize text: remove spaces, convert to lowercase for comparison
-        String normalizedTarget = targetText.replaceAll("\\s+", "").toLowerCase();
-        String normalizedRecognized = recognizedText.replaceAll("\\s+", "").toLowerCase();
+        String normalizedTarget = normalizeJapaneseText(targetText);
+        String normalizedRecognized = normalizeJapaneseText(recognizedText);
 
         // Calculate Levenshtein distance
         int distance = levenshteinDistance(normalizedTarget, normalizedRecognized);
@@ -104,7 +61,8 @@ public class SpeechRecognitionServiceImpl implements SpeechRecognitionService {
             return 1.0; // Both strings are empty
         }
 
-        return 1.0 - ((double) distance / maxLength);
+        double accuracy = 1.0 - ((double) distance / maxLength);
+        return Math.max(0.0, accuracy); // Ensure non-negative
     }
 
     @Override
@@ -126,7 +84,8 @@ public class SpeechRecognitionServiceImpl implements SpeechRecognitionService {
                     "You are a Japanese language tutor evaluating a student's pronunciation. " +
                             "Compare the target Japanese text with what was recognized from their speech. " +
                             "Give specific feedback on pronunciation errors, and suggest improvements. " +
-                            "Be concise but helpful, with up to 3 points of feedback.\n\n" +
+                            "Be concise but helpful, with up to 3 points of feedback. " +
+                            "If the texts are similar, provide encouraging feedback and minor improvement suggestions.\n\n" +
                             "Target text: \"%s\"\n" +
                             "Recognized speech: \"%s\"\n\n" +
                             "Feedback in English:",
@@ -168,7 +127,40 @@ public class SpeechRecognitionServiceImpl implements SpeechRecognitionService {
                 }
             }
 
-            return "Unable to generate pronunciation feedback.";
+            return generateDefaultFeedback(targetText, recognizedText);
+        } catch (Exception e) {
+            logger.error("Error generating pronunciation feedback: {}", e.getMessage());
+            return generateDefaultFeedback(targetText, recognizedText);
+        }
+    }
+
+    /**
+     * Normalize Japanese text for comparison
+     */
+    private String normalizeJapaneseText(String text) {
+        if (text == null) return "";
+
+        return text
+                .replaceAll("\\s+", "") // Remove all whitespace
+                .toLowerCase() // Convert to lowercase
+                .replaceAll("[。、！？]", "") // Remove Japanese punctuation
+                .trim();
+    }
+
+    /**
+     * Generate default feedback when AI service is unavailable
+     */
+    private String generateDefaultFeedback(String targetText, String recognizedText) {
+        double accuracy = calculateAccuracyScore(targetText, recognizedText);
+
+        if (accuracy >= 0.9) {
+            return "Excellent pronunciation! Your speech recognition accuracy is very high. Keep practicing to maintain this level.";
+        } else if (accuracy >= 0.7) {
+            return "Good pronunciation! There are some minor differences. Try speaking more clearly and at a moderate pace.";
+        } else if (accuracy >= 0.5) {
+            return "Fair pronunciation. Focus on pronouncing each syllable clearly. Consider listening to native speakers and practicing the sounds that are different.";
+        } else {
+            return "Keep practicing! Try speaking more slowly and clearly. Focus on individual words first, then combine them into sentences.";
         }
     }
 

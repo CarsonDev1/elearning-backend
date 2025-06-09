@@ -5,6 +5,7 @@ import com.jplearning.dto.response.SpeechPracticeResponse;
 import com.jplearning.exception.BadRequestException;
 import com.jplearning.security.services.UserDetailsImpl;
 import com.jplearning.service.SpeechPracticeService;
+import com.jplearning.service.impl.SpeechPracticeServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,15 +25,19 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/speech-practice")
-@Tag(name = "Speech Practice", description = "Japanese speech practice API")
+@Tag(name = "Speech Practice", description = "Japanese speech practice API with Web Speech API support")
 @CrossOrigin(origins = "*")
 public class SpeechPracticeController {
 
     @Autowired
     private SpeechPracticeService speechPracticeService;
+
+    @Autowired
+    private SpeechPracticeServiceImpl speechPracticeServiceImpl;
 
     @PostMapping
     @Operation(
@@ -48,10 +53,10 @@ public class SpeechPracticeController {
         return ResponseEntity.ok(speechPracticeService.createPractice(studentId, lessonId, request));
     }
 
-    @PostMapping(value = "/{practiceId}/submit", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/{practiceId}/submit-audio", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Submit practice audio",
-            description = "Submit audio recording for speech recognition and evaluation",
+            description = "Submit audio recording for storage (recognition done on frontend)",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @PreAuthorize("hasRole('STUDENT')")
@@ -62,6 +67,50 @@ public class SpeechPracticeController {
             return ResponseEntity.ok(speechPracticeService.submitPracticeAudio(practiceId, audioFile));
         } catch (IOException e) {
             throw new BadRequestException("Failed to process audio: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/{practiceId}/submit-recognition")
+    @Operation(
+            summary = "Submit recognition result",
+            description = "Submit speech recognition result from Web Speech API",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<SpeechPracticeResponse> submitRecognitionResult(
+            @PathVariable Long practiceId,
+            @RequestBody Map<String, String> request) {
+        try {
+            String recognizedText = request.get("recognizedText");
+            if (recognizedText == null || recognizedText.trim().isEmpty()) {
+                throw new BadRequestException("Recognized text is required");
+            }
+
+            return ResponseEntity.ok(speechPracticeServiceImpl.submitRecognitionResult(practiceId, recognizedText));
+        } catch (IOException e) {
+            throw new BadRequestException("Failed to process recognition result: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/{practiceId}/submit-complete")
+    @Operation(
+            summary = "Submit complete practice",
+            description = "Submit both audio and recognition result in one request",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<SpeechPracticeResponse> submitCompletePractice(
+            @PathVariable Long practiceId,
+            @RequestParam("audio") MultipartFile audioFile,
+            @RequestParam("recognizedText") String recognizedText) {
+        try {
+            // First submit the audio
+            speechPracticeService.submitPracticeAudio(practiceId, audioFile);
+
+            // Then submit the recognition result
+            return ResponseEntity.ok(speechPracticeServiceImpl.submitRecognitionResult(practiceId, recognizedText));
+        } catch (IOException e) {
+            throw new BadRequestException("Failed to process complete practice: " + e.getMessage());
         }
     }
 
@@ -128,6 +177,26 @@ public class SpeechPracticeController {
     public ResponseEntity<List<SpeechPracticeResponse>> getMyRecentPractices() {
         Long studentId = getCurrentUserId();
         return ResponseEntity.ok(speechPracticeService.getRecentPractices(studentId));
+    }
+
+    @GetMapping("/web-speech-config")
+    @Operation(
+            summary = "Get Web Speech API configuration",
+            description = "Get configuration for Web Speech API usage",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<Map<String, Object>> getWebSpeechConfig() {
+        return ResponseEntity.ok(Map.of(
+                "supportedLanguages", List.of("ja-JP", "en-US"),
+                "defaultLanguage", "ja-JP",
+                "maxRecordingTime", 30, // seconds
+                "audioFormat", "webm",
+                "instructions", Map.of(
+                        "en", "Click the microphone button to start recording. Speak clearly and at a normal pace.",
+                        "ja", "マイクボタンをクリックして録音を開始してください。はっきりと通常のペースで話してください。"
+                )
+        ));
     }
 
     private Long getCurrentUserId() {

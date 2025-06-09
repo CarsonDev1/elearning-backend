@@ -3,21 +3,16 @@ package com.jplearning.service.impl;
 import com.jplearning.dto.request.SpeechPracticeRequest;
 import com.jplearning.dto.response.SpeechPracticeResponse;
 import com.jplearning.dto.response.StudentBriefResponse;
-import com.jplearning.entity.Lesson;
-import com.jplearning.entity.SpeechPractice;
-import com.jplearning.entity.Student;
+import com.jplearning.entity.*;
 import com.jplearning.exception.BadRequestException;
 import com.jplearning.exception.ResourceNotFoundException;
-import com.jplearning.repository.LessonRepository;
-import com.jplearning.repository.SpeechPracticeRepository;
-import com.jplearning.repository.StudentRepository;
+import com.jplearning.repository.*;
 import com.jplearning.service.CloudinaryService;
 import com.jplearning.service.SpeechPracticeService;
 import com.jplearning.service.SpeechRecognitionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -87,12 +82,36 @@ public class SpeechPracticeServiceImpl implements SpeechPracticeService {
             throw new BadRequestException("Audio file cannot be empty");
         }
 
-        // Upload audio to Cloudinary
+        // Upload audio to Cloudinary for storage
         Map<String, String> uploadResult = cloudinaryService.uploadFile(audioFile);
         String audioUrl = uploadResult.get("secureUrl");
 
-        // Recognize speech
-        String recognizedText = speechRecognitionService.recognizeSpeech(audioFile, "ja-JP");
+        // Update practice with audio URL
+        practice.setStudentAudioUrl(audioUrl);
+
+        // Note: Recognition will be done on frontend using Web Speech API
+        // The recognized text will be sent separately via submitRecognitionResult
+
+        // Save updated practice
+        SpeechPractice updatedPractice = speechPracticeRepository.save(practice);
+
+        // Return response
+        return mapToResponse(updatedPractice);
+    }
+
+    /**
+     * New method to submit recognition results from frontend
+     */
+    @Transactional
+    public SpeechPracticeResponse submitRecognitionResult(Long practiceId, String recognizedText) throws IOException {
+        // Find practice
+        SpeechPractice practice = speechPracticeRepository.findById(practiceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Speech practice not found with id: " + practiceId));
+
+        // Validate recognized text
+        if (recognizedText == null || recognizedText.trim().isEmpty()) {
+            throw new BadRequestException("Recognized text cannot be empty");
+        }
 
         // Calculate accuracy score
         double accuracyScore = speechRecognitionService.calculateAccuracyScore(
@@ -103,8 +122,7 @@ public class SpeechPracticeServiceImpl implements SpeechPracticeService {
                 practice.getTargetText(), recognizedText);
 
         // Update practice
-        practice.setStudentAudioUrl(audioUrl);
-        practice.setRecognizedText(recognizedText);
+        practice.setRecognizedText(recognizedText.trim());
         practice.setAccuracyScore(accuracyScore);
         practice.setPronunciationFeedback(feedback);
 
@@ -178,7 +196,7 @@ public class SpeechPracticeServiceImpl implements SpeechPracticeService {
                 .lessonId(lessonId)
                 .createdAt(practice.getCreatedAt())
                 .updatedAt(practice.getUpdatedAt())
-                .isCompleted(practice.getStudentAudioUrl() != null)
+                .isCompleted(practice.getRecognizedText() != null && !practice.getRecognizedText().isEmpty())
                 .build();
     }
 }
