@@ -40,6 +40,23 @@ public class Exercise {
     @OneToMany(mappedBy = "exercise", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Question> questions = new ArrayList<>();
 
+    // Thêm fields cho speech exercises
+    @Column(name = "target_text")
+    private String targetText; // Văn bản mục tiêu cho bài tập nói
+
+    @Column(name = "target_audio_url")
+    private String targetAudioUrl; // URL audio mẫu
+
+    @Column(name = "difficulty_level")
+    @Enumerated(EnumType.STRING)
+    private DifficultyLevel difficultyLevel;
+
+    @Column(name = "speech_recognition_language")
+    private String speechRecognitionLanguage = "ja-JP"; // Ngôn ngữ nhận dạng
+
+    @Column(name = "minimum_accuracy_score")
+    private Integer minimumAccuracyScore = 70; // Điểm tối thiểu để pass
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -49,6 +66,21 @@ public class Exercise {
     private LocalDateTime updatedAt;
 
     public enum ExerciseType {
-        MULTIPLE_CHOICE, FILL_IN_BLANK, LISTENING, WRITING, SPEAKING, MATCHING
+        MULTIPLE_CHOICE,      // Trắc nghiệm
+        FILL_IN_BLANK,       // Điền vào chỗ trống
+        LISTENING,           // Bài tập nghe
+        SPEAKING,            // Bài tập nói
+        WRITING,             // Bài tập viết
+        MATCHING,            // Nối từ
+        SPEECH_RECOGNITION,  // Nhận dạng giọng nói
+        PRONUNCIATION       // Luyện phát âm
+    }
+
+    public enum DifficultyLevel {
+        BEGINNER,    // Sơ cấp
+        ELEMENTARY,  // Cơ bản
+        INTERMEDIATE, // Trung cấp
+        ADVANCED,    // Nâng cao
+        EXPERT      // Chuyên gia
     }
 }
