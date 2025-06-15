@@ -30,14 +30,35 @@ public class CloudinaryServiceImpl implements CloudinaryService {
 
             Map<String, Object> params = new HashMap<>();
 
-            // Check if file is a PDF or other document type
+            // Check file content type
             String contentType = multipartFile.getContentType();
-            if (contentType != null &&
-                    (contentType.equals("application/pdf") ||
-                            contentType.startsWith("application/"))) {
-                params.put("resource_type", "raw");
+            logger.info("Uploading file with content type: {}", contentType);
+            
+            if (contentType != null) {
+                // Handle audio files
+                if (contentType.startsWith("audio/")) {
+                    logger.info("Detected audio file. Setting resource_type to 'video' for audio handling");
+                    params.put("resource_type", "video"); // Cloudinary uses "video" resource type for audio files
+                    params.put("folder", "japanese_learning/audio");
+                }
+                // Handle documents
+                else if (contentType.equals("application/pdf") || contentType.startsWith("application/")) {
+                    params.put("resource_type", "raw");
+                    params.put("folder", "japanese_learning/documents");
+                }
+                // Handle video files
+                else if (contentType.startsWith("video/")) {
+                    params.put("resource_type", "video");
+                    params.put("folder", "japanese_learning/videos");
+                }
+                // Default to image (this is where we were failing)
+                else {
+                    params.put("resource_type", "image");
+                    params.put("folder", "japanese_learning/images");
+                }
             }
 
+            logger.info("Uploading file to Cloudinary with params: {}", params);
             Map<String, Object> uploadResult = cloudinary.uploader().upload(file, params);
 
             boolean isDeleted = file.delete();
@@ -47,7 +68,7 @@ public class CloudinaryServiceImpl implements CloudinaryService {
 
             return extractUploadResult(uploadResult);
         } catch (IOException e) {
-            logger.error("Failed to upload file to Cloudinary", e);
+            logger.error("Failed to upload file to Cloudinary: {}", e.getMessage(), e);
             throw e;
         }
     }

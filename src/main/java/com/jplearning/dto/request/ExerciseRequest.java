@@ -23,4 +23,14 @@ public class ExerciseRequest {
 
     @Valid
     private List<QuestionRequest> questions;
+
+    private String targetText;
+
+    private String targetAudioUrl;
+
+    private Exercise.DifficultyLevel difficultyLevel;
+
+    private String speechRecognitionLanguage = "ja-JP";
+
+    private Integer minimumAccuracyScore = 70;
 }

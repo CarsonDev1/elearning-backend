@@ -478,6 +478,16 @@ public class CourseServiceImpl implements CourseService {
             throw new BadRequestException("Image size should not exceed 2MB");
         }
     }
+    
+    /**
+     * Check if exercise type is a speech exercise
+     */
+    private boolean isSpeechExercise(Exercise.ExerciseType type) {
+        return type == Exercise.ExerciseType.LISTENING ||
+               type == Exercise.ExerciseType.SPEAKING ||
+               type == Exercise.ExerciseType.SPEECH_RECOGNITION ||
+               type == Exercise.ExerciseType.PRONUNCIATION;
+    }
 
     // Helper methods
 
@@ -561,6 +571,16 @@ public class CourseServiceImpl implements CourseService {
                 for (ExerciseRequest exerciseRequest : lessonRequest.getExercises()) {
                     Exercise exercise = courseMapper.requestToExercise(exerciseRequest);
                     exercise.setLesson(lesson);
+                    
+                    // Handle speech exercise fields
+                    if (isSpeechExercise(exerciseRequest.getType())) {
+                        exercise.setTargetText(exerciseRequest.getTargetText());
+                        exercise.setTargetAudioUrl(exerciseRequest.getTargetAudioUrl());
+                        exercise.setDifficultyLevel(exerciseRequest.getDifficultyLevel());
+                        exercise.setSpeechRecognitionLanguage(exerciseRequest.getSpeechRecognitionLanguage());
+                        exercise.setMinimumAccuracyScore(exerciseRequest.getMinimumAccuracyScore());
+                    }
+                    
                     lesson.getExercises().add(exercise);
 
                     // Initialize questions list if needed
@@ -568,8 +588,9 @@ public class CourseServiceImpl implements CourseService {
                         exercise.setQuestions(new ArrayList<>());
                     }
 
-                    // Process questions if provided
-                    if (exerciseRequest.getQuestions() != null && !exerciseRequest.getQuestions().isEmpty()) {
+                    // Process questions if provided (only for traditional exercises)
+                    if (!isSpeechExercise(exerciseRequest.getType()) && 
+                        exerciseRequest.getQuestions() != null && !exerciseRequest.getQuestions().isEmpty()) {
                         for (QuestionRequest questionRequest : exerciseRequest.getQuestions()) {
                             Question question = courseMapper.requestToQuestion(questionRequest);
                             question.setExercise(exercise);

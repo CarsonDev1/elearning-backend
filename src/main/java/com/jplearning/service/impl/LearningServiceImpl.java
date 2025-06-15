@@ -142,6 +142,12 @@ public class LearningServiceImpl implements LearningService {
                                         .description(exercise.getDescription())
                                         .type(exercise.getType())
                                         .questions(questionResponses)
+                                        // Speech exercise specific fields
+                                        .targetText(exercise.getTargetText())
+                                        .targetAudioUrl(exercise.getTargetAudioUrl())
+                                        .difficultyLevel(exercise.getDifficultyLevel())
+                                        .speechRecognitionLanguage(exercise.getSpeechRecognitionLanguage())
+                                        .minimumAccuracyScore(exercise.getMinimumAccuracyScore())
                                         .createdAt(exercise.getCreatedAt())
                                         .updatedAt(exercise.getUpdatedAt())
                                         .build();

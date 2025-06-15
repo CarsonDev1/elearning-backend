@@ -44,13 +44,28 @@ public class SpeechRecognitionServiceImpl implements SpeechRecognitionService {
 
     @Override
     public double calculateAccuracyScore(String targetText, String recognizedText) {
-        if (targetText == null || recognizedText == null) {
+        if (targetText == null || recognizedText == null || 
+            targetText.trim().isEmpty() || recognizedText.trim().isEmpty()) {
             return 0.0;
         }
 
         // Normalize text: remove spaces, convert to lowercase for comparison
         String normalizedTarget = normalizeJapaneseText(targetText);
         String normalizedRecognized = normalizeJapaneseText(recognizedText);
+
+        // Exact match gets 100%
+        if (normalizedTarget.equals(normalizedRecognized)) {
+            return 1.0;
+        }
+
+        // Check if texts are in completely different languages
+        boolean targetIsJapanese = isJapaneseText(normalizedTarget);
+        boolean recognizedIsJapanese = isJapaneseText(normalizedRecognized);
+        
+        // Heavy penalty for different languages
+        if (targetIsJapanese != recognizedIsJapanese) {
+            return Math.max(0.0, 0.3); // Maximum 30% for wrong language
+        }
 
         // Calculate Levenshtein distance
         int distance = levenshteinDistance(normalizedTarget, normalizedRecognized);
@@ -62,7 +77,12 @@ public class SpeechRecognitionServiceImpl implements SpeechRecognitionService {
         }
 
         double accuracy = 1.0 - ((double) distance / maxLength);
-        return Math.max(0.0, accuracy); // Ensure non-negative
+        
+        // Apply additional penalties for very different lengths
+        int lengthDifference = Math.abs(normalizedTarget.length() - normalizedRecognized.length());
+        double lengthPenalty = Math.min(0.2, lengthDifference * 0.02); // Max 20% penalty
+        
+        return Math.max(0.0, accuracy - lengthPenalty); // Ensure non-negative
     }
 
     @Override
@@ -145,6 +165,16 @@ public class SpeechRecognitionServiceImpl implements SpeechRecognitionService {
                 .toLowerCase() // Convert to lowercase
                 .replaceAll("[。、！？]", "") // Remove Japanese punctuation
                 .trim();
+    }
+
+    /**
+     * Check if text contains Japanese characters
+     */
+    private boolean isJapaneseText(String text) {
+        if (text == null || text.isEmpty()) return false;
+        
+        // Check for Hiragana, Katakana, and Kanji characters
+        return text.matches(".*[\\u3040-\\u309F\\u30A0-\\u30FF\\u4E00-\\u9FAF].*");
     }
 
     /**

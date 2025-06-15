@@ -19,6 +19,14 @@ public class ExerciseResponse {
     private String description;
     private Exercise.ExerciseType type;
     private List<QuestionResponse> questions;
+    
+    // Speech exercise specific fields
+    private String targetText;
+    private String targetAudioUrl;
+    private Exercise.DifficultyLevel difficultyLevel;
+    private String speechRecognitionLanguage;
+    private Integer minimumAccuracyScore;
+    
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
