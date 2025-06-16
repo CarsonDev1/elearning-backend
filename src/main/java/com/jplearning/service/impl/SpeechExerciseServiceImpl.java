@@ -108,14 +108,39 @@ public class SpeechExerciseServiceImpl implements SpeechExerciseService {
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + studentId));
 
-        // Calculate accuracy score
-        double accuracyScore = calculateAccuracyScore(exercise.getTargetText(), request.getRecognizedText());
+        // Calculate accuracy score based on exercise type
+        double accuracyScore;
+        
+        switch (exercise.getType()) {
+            case LISTENING:
+                // For listening exercises, check if the recognized text matches the target exactly
+                accuracyScore = request.getRecognizedText().equals(exercise.getTargetText()) ? 100.0 : 0.0;
+                break;
+            case SPEAKING:
+                // For speaking exercises, use speech recognition service for accuracy
+                accuracyScore = calculateAccuracyScore(exercise.getTargetText(), request.getRecognizedText());
+                break;
+            case PRONUNCIATION:
+                // For pronunciation exercises, use speech recognition with stricter criteria
+                accuracyScore = calculateAccuracyScore(exercise.getTargetText(), request.getRecognizedText());
+                // Add extra penalty for pronunciation exercises to make them stricter
+                accuracyScore = Math.max(0, accuracyScore - 10);
+                break;
+            case SPEECH_RECOGNITION:
+                // For speech recognition exercises, use standard accuracy calculation
+                accuracyScore = calculateAccuracyScore(exercise.getTargetText(), request.getRecognizedText());
+                break;
+            default:
+                // For other exercise types, use standard accuracy calculation
+                accuracyScore = calculateAccuracyScore(exercise.getTargetText(), request.getRecognizedText());
+        }
 
-        // Generate feedback
+        // Generate feedback based on exercise type
         String feedback = generatePronunciationFeedback(
                 exercise.getTargetText(),
                 request.getRecognizedText(),
-                accuracyScore
+                accuracyScore,
+                exercise.getType()
         );
 
         // Determine if passed
@@ -278,6 +303,88 @@ public class SpeechExerciseServiceImpl implements SpeechExerciseService {
             return generateSimpleFeedback(accuracyScore);
         }
     }
+    
+    @Override
+    public String generatePronunciationFeedback(String targetText, String recognizedText, double accuracyScore, Exercise.ExerciseType exerciseType) {
+        StringBuilder feedback = new StringBuilder();
+        
+        // Add exercise type specific feedback
+        switch (exerciseType) {
+            case LISTENING:
+                if (accuracyScore >= 90) {
+                    feedback.append("Tuyệt vời! Bạn đã nghe và nhận diện chính xác. ");
+                } else {
+                    feedback.append("Bạn cần luyện nghe thêm. Hãy tập trung vào từng âm tiết. ");
+                }
+                break;
+                
+            case SPEAKING:
+                if (accuracyScore >= 90) {
+                    feedback.append("Phát âm của bạn rất tốt! Tiếp tục phát huy. ");
+                } else if (accuracyScore >= 70) {
+                    feedback.append("Phát âm khá tốt, nhưng cần cải thiện thêm về ngữ điệu. ");
+                } else {
+                    feedback.append("Bạn cần luyện tập phát âm thêm. Hãy chú ý đến từng âm tiết. ");
+                }
+                break;
+                
+            case PRONUNCIATION:
+                if (accuracyScore >= 90) {
+                    feedback.append("Xuất sắc! Phát âm của bạn rất chuẩn xác. ");
+                } else if (accuracyScore >= 70) {
+                    feedback.append("Phát âm tương đối tốt. Hãy chú ý hơn đến ngữ điệu và trọng âm. ");
+                } else {
+                    feedback.append("Phát âm cần cải thiện nhiều. Hãy luyện tập từng từ một cách chậm rãi. ");
+                }
+                break;
+                
+            case SPEECH_RECOGNITION:
+                if (accuracyScore >= 90) {
+                    feedback.append("Tuyệt vời! Bạn đã nhận diện và phát âm chính xác. ");
+                } else if (accuracyScore >= 70) {
+                    feedback.append("Khá tốt. Bạn đã nhận diện được phần lớn nội dung. ");
+                } else {
+                    feedback.append("Bạn cần luyện nghe và phát âm thêm. Hãy tập trung vào từng câu. ");
+                }
+                break;
+                
+            default:
+                if (accuracyScore >= 90) {
+                    feedback.append("Xuất sắc! ");
+                } else if (accuracyScore >= 70) {
+                    feedback.append("Khá tốt. Tiếp tục cố gắng. ");
+                } else {
+                    feedback.append("Cần cải thiện. Hãy luyện tập thêm. ");
+                }
+        }
+        
+        // Add general feedback based on score
+        if (accuracyScore >= 95) {
+            feedback.append("Bạn đã hoàn thành bài tập một cách xuất sắc!");
+        } else if (accuracyScore >= 80) {
+            feedback.append("Bạn đã hoàn thành bài tập tốt.");
+        } else if (accuracyScore >= 60) {
+            feedback.append("Bạn cần luyện tập thêm để cải thiện kỹ năng.");
+        } else {
+            feedback.append("Hãy tiếp tục luyện tập và không nản lòng.");
+        }
+        
+        return feedback.toString();
+    }
+    
+    private String generateSimpleFeedback(double accuracyScore) {
+        if (accuracyScore >= 90) {
+            return "Xuất sắc! Phát âm của bạn rất chính xác.";
+        } else if (accuracyScore >= 80) {
+            return "Tốt! Phát âm khá chính xác, tiếp tục luyện tập.";
+        } else if (accuracyScore >= 70) {
+            return "Khá tốt! Hãy chú ý đến cách phát âm một số âm.";
+        } else if (accuracyScore >= 60) {
+            return "Cần cải thiện. Hãy luyện tập thêm và nghe kỹ các âm tiếng Nhật.";
+        } else {
+            return "Cần luyện tập nhiều hơn. Hãy nghe và bắt chước phát âm từ từ.";
+        }
+    }
 
     // Helper methods
     private SpeechExerciseResponse mapToSpeechExerciseResponse(Exercise exercise) {
@@ -345,19 +452,5 @@ public class SpeechExerciseServiceImpl implements SpeechExerciseService {
         }
 
         return new int[]{currentStreak, longestStreak};
-    }
-
-    private String generateSimpleFeedback(double accuracyScore) {
-        if (accuracyScore >= 90) {
-            return "Xuất sắc! Phát âm của bạn rất chính xác.";
-        } else if (accuracyScore >= 80) {
-            return "Tốt! Phát âm khá chính xác, tiếp tục luyện tập.";
-        } else if (accuracyScore >= 70) {
-            return "Khá tốt! Hãy chú ý đến cách phát âm một số âm.";
-        } else if (accuracyScore >= 60) {
-            return "Cần cải thiện. Hãy luyện tập thêm và nghe kỹ các âm tiếng Nhật.";
-        } else {
-            return "Cần luyện tập nhiều hơn. Hãy nghe và bắt chước phát âm từ từ.";
-        }
     }
 }

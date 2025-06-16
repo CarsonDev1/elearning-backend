@@ -80,4 +80,9 @@ public interface SpeechExerciseService {
      * Generate pronunciation feedback
      */
     String generatePronunciationFeedback(String targetText, String recognizedText, double accuracyScore);
+
+    /**
+     * Generate pronunciation feedback with exercise type
+     */
+    String generatePronunciationFeedback(String targetText, String recognizedText, double accuracyScore, Exercise.ExerciseType exerciseType);
 }
