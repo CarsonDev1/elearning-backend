@@ -12,7 +12,6 @@ public class PaymentRequest {
 
     private String orderInfo;
 
-    @NotNull(message = "Student ID is required")
     private Long studentId;
 
     private Long courseId;

@@ -51,9 +51,16 @@ public class PaymentController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @PreAuthorize("hasRole('STUDENT')")
-    public ResponseEntity<VnPayResponse> createPayment(@Valid @RequestBody PaymentRequest request) {
+    public ResponseEntity<VnPayResponse> createPayment(@RequestBody PaymentRequest request) {
+        // Validate manually những field bắt buộc
+        if (request.getAmount() == null) {
+            throw new IllegalArgumentException("Amount is required");
+        }
+        
+        // Set studentId từ authenticated user
         Long studentId = getCurrentUserId();
         request.setStudentId(studentId);
+        
         return ResponseEntity.ok(vnPayService.createPaymentUrl(request));
     }
 

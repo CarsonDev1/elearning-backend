@@ -161,6 +161,17 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         return enrollments;
     }
 
+    @Override
+    public boolean isStudentEnrolledInCombo(Long studentId, Long comboId) {
+        // Check if any enrollments for this student belong to this combo
+        List<Enrollment> enrollments = enrollmentRepository.findByStudentIdAndComboId(studentId, comboId);
+        
+        boolean isEnrolled = !enrollments.isEmpty();
+        System.out.println("Checking combo enrollment: studentId=" + studentId + 
+                          ", comboId=" + comboId + ", isEnrolled=" + isEnrolled);
+        return isEnrolled;
+    }
+
     // Rest of the methods remain unchanged
 
     public void debugEnrollmentCheck(Long studentId, Long courseId) {

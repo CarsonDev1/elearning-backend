@@ -51,5 +51,19 @@ public interface EnrollmentService {
      */
     String generateCertificate(Long enrollmentId);
 
+    /**
+     * Check if student is enrolled in a course
+     * @param studentId ID of the student
+     * @param courseId ID of the course
+     * @return true if student is enrolled in course
+     */
     boolean isStudentEnrolledInCourse(Long studentId, Long courseId);
+
+    /**
+     * Check if student is enrolled in a combo
+     * @param studentId ID of the student
+     * @param comboId ID of the combo
+     * @return true if student is enrolled in combo
+     */
+    boolean isStudentEnrolledInCombo(Long studentId, Long comboId);
 }

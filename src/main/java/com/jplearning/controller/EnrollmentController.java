@@ -27,7 +27,7 @@ public class EnrollmentController {
     @GetMapping("/my-enrollments")
     @Operation(
             summary = "Get my enrollments",
-            description = "Get all enrollments for the current authenticated student",
+            description = "Get all enrollments for the current student",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @PreAuthorize("hasRole('STUDENT')")
@@ -69,6 +69,32 @@ public class EnrollmentController {
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<String> getCertificate(@PathVariable Long enrollmentId) {
         return ResponseEntity.ok(enrollmentService.generateCertificate(enrollmentId));
+    }
+
+    @GetMapping("/check-combo/{comboId}")
+    @Operation(
+            summary = "Check combo enrollment",
+            description = "Check if current student is enrolled in a combo",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<Boolean> checkComboEnrollment(@PathVariable Long comboId) {
+        Long studentId = getCurrentUserId();
+        boolean isEnrolled = enrollmentService.isStudentEnrolledInCombo(studentId, comboId);
+        return ResponseEntity.ok(isEnrolled);
+    }
+
+    @GetMapping("/check-course/{courseId}")
+    @Operation(
+            summary = "Check course enrollment",
+            description = "Check if current student is enrolled in a course",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<Boolean> checkCourseEnrollment(@PathVariable Long courseId) {
+        Long studentId = getCurrentUserId();
+        boolean isEnrolled = enrollmentService.isStudentEnrolledInCourse(studentId, courseId);
+        return ResponseEntity.ok(isEnrolled);
     }
 
     private Long getCurrentUserId() {
