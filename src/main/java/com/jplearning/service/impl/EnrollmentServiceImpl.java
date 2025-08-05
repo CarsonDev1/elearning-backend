@@ -11,6 +11,8 @@ import com.jplearning.mapper.CourseMapper;
 import com.jplearning.repository.*;
 import com.jplearning.service.CloudinaryService;
 import com.jplearning.service.EnrollmentService;
+import com.jplearning.service.CertificateService;
+import com.jplearning.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +47,12 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Autowired
     private CloudinaryService cloudinaryService;
+
+    @Autowired
+    private CertificateService certificateService;
+
+    @Autowired
+    private NotificationService notificationService;
 
 
     @Override
@@ -94,6 +102,14 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         // Increment course countBuy and save
         course.setCountBuy(course.getCountBuy() != null ? course.getCountBuy() + 1 : 1);
         courseRepository.save(course);
+
+        // Create enrollment notification
+        try {
+            notificationService.createEnrollmentNotification(studentId, course.getTitle(), courseId);
+        } catch (Exception e) {
+            // Log error but don't fail the enrollment
+            System.err.println("Failed to create enrollment notification: " + e.getMessage());
+        }
 
         // Return response
         return mapToResponse(savedEnrollment);
@@ -268,34 +284,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     public String generateCertificate(Long enrollmentId) {
-        // Find enrollment
-        Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Enrollment not found with id: " + enrollmentId));
-
-        // Check if course is completed
-        if (!enrollment.isCompleted()) {
-            throw new BadRequestException("Course must be completed to generate certificate");
-        }
-
-        // Check if certificate already exists
-        if (enrollment.getCertificateUrl() != null && !enrollment.getCertificateUrl().isEmpty()) {
-            return enrollment.getCertificateUrl();
-        }
-
-        // In a real implementation, generate a PDF certificate and upload to Cloudinary
-        // For this example, we'll just create a dummy certificate URL
-        String certificateId = "CERT-" + enrollment.getStudent().getId() + "-" +
-                enrollment.getCourse().getId() + "-" + System.currentTimeMillis();
-        enrollment.setCertificateId(certificateId);
-
-        // TODO: Generate actual certificate PDF and upload to Cloudinary
-        String certificateUrl = "https://example.com/certificates/" + certificateId + ".pdf";
-        enrollment.setCertificateUrl(certificateUrl);
-
-        // Save updated enrollment
-        enrollmentRepository.save(enrollment);
-
-        return certificateUrl;
+        return certificateService.generateCertificatePdf(enrollmentId);
     }
 
     // Helper methods
