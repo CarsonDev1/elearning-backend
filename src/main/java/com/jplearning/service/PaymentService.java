@@ -1,6 +1,8 @@
 package com.jplearning.service;
 
+import com.jplearning.dto.request.QRTransferPaymentRequest;
 import com.jplearning.dto.response.PaymentResponse;
+import com.jplearning.dto.response.QRTransferResponse;
 import com.jplearning.entity.Payment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -46,4 +48,24 @@ public interface PaymentService {
      * @return Page of payment responses
      */
     Page<PaymentResponse> getPendingPayments(Pageable pageable);
+
+    /**
+     * Get payments waiting for admin confirmation (QR/manual transfers)
+     */
+    Page<PaymentResponse> getWaitingConfirmationPayments(Pageable pageable);
+
+    /**
+     * Create a QR/manual transfer payment request (WAITING_CONFIRMATION)
+     */
+    QRTransferResponse createQRTransferPayment(Long studentId, QRTransferPaymentRequest request);
+
+    /**
+     * Get QR transfer payment details
+     */
+    QRTransferResponse getQRTransferPayment(Long paymentId);
+
+    /**
+     * Admin processes a payment (approve/reject)
+     */
+    PaymentResponse adminProcessPayment(Long paymentId, String action, String adminNotes);
 }

@@ -63,11 +63,21 @@ public class Payment {
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
 
+    // Additional fields to support QR/manual transfer flow and admin processing
+    @Column(name = "bank_account_info", columnDefinition = "TEXT")
+    private String bankAccountInfo;
+
+    @Column(name = "admin_notes", columnDefinition = "TEXT")
+    private String adminNotes;
+
+    @Column(name = "admin_processed_at")
+    private LocalDateTime adminProcessedAt;
+
     public enum PaymentStatus {
-        PENDING, COMPLETED, FAILED, CANCELED
+        PENDING, COMPLETED, FAILED, CANCELED, WAITING_CONFIRMATION, REJECTED
     }
 
     public enum PaymentMethod {
-        VNPAY, CREDIT_CARD, BANK_TRANSFER
+        VNPAY, CREDIT_CARD, BANK_TRANSFER, QR_TRANSFER
     }
 }

@@ -1,7 +1,9 @@
 package com.jplearning.controller;
 
 import com.jplearning.dto.request.PaymentRequest;
+import com.jplearning.dto.request.QRTransferPaymentRequest;
 import com.jplearning.dto.response.PaymentResponse;
+import com.jplearning.dto.response.QRTransferResponse;
 import com.jplearning.dto.response.VnPayResponse;
 import com.jplearning.security.services.UserDetailsImpl;
 import com.jplearning.service.PaymentService;
@@ -62,6 +64,29 @@ public class PaymentController {
         request.setStudentId(studentId);
         
         return ResponseEntity.ok(vnPayService.createPaymentUrl(request));
+    }
+
+    @PostMapping("/qr-transfer")
+    @Operation(
+            summary = "Create QR/manual transfer payment",
+            description = "Create a QR/manual transfer payment awaiting admin confirmation",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<QRTransferResponse> createQRTransferPayment(@Valid @RequestBody QRTransferPaymentRequest request) {
+        Long studentId = getCurrentUserId();
+        return ResponseEntity.ok(paymentService.createQRTransferPayment(studentId, request));
+    }
+
+    @GetMapping("/qr-transfer/{paymentId}")
+    @Operation(
+            summary = "Get QR/manual transfer payment details",
+            description = "Get QR/manual transfer payment details by ID",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PreAuthorize("hasRole('STUDENT') or hasRole('ADMIN')")
+    public ResponseEntity<QRTransferResponse> getQRTransferPayment(@PathVariable Long paymentId) {
+        return ResponseEntity.ok(paymentService.getQRTransferPayment(paymentId));
     }
 
     @GetMapping("/vnpay-return")
@@ -153,6 +178,35 @@ public class PaymentController {
 
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok(paymentService.getPendingPayments(pageable));
+    }
+
+    @GetMapping("/admin/waiting-confirmation")
+    @Operation(
+            summary = "Get payments waiting for confirmation",
+            description = "Get all QR/manual transfer payments waiting for admin confirmation",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Page<PaymentResponse>> getWaitingConfirmation(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(paymentService.getWaitingConfirmationPayments(pageable));
+    }
+
+    @PostMapping("/admin/process")
+    @Operation(
+            summary = "Admin process QR/manual transfer payment",
+            description = "Approve or reject a QR/manual transfer payment",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<PaymentResponse> adminProcessPayment(@RequestBody Map<String, Object> body) {
+        Long paymentId = Long.valueOf(String.valueOf(body.get("paymentId")));
+        String action = String.valueOf(body.get("action"));
+        String adminNotes = body.get("adminNotes") != null ? String.valueOf(body.get("adminNotes")) : null;
+        return ResponseEntity.ok(paymentService.adminProcessPayment(paymentId, action, adminNotes));
     }
 
     @GetMapping("/status/{transactionId}")

@@ -13,20 +13,16 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PaymentResponse {
-    private Long id;
+public class QRTransferResponse {
+    private Long paymentId;
     private String transactionId;
-    private String orderInfo;
     private BigDecimal amount;
-    private Payment.PaymentStatus status;
-    private Payment.PaymentMethod method;
-    private String successRedirectUrl;
-    private String cancelRedirectUrl;
-    private StudentBriefResponse student;
-    private LocalDateTime createdAt;
-    private LocalDateTime paidAt;
+    private String orderInfo;
     private String qrCodeUrl;
     private String bankAccountInfo;
-    private String adminNotes;
-    private LocalDateTime adminProcessedAt;
+    private Payment.PaymentStatus status;
+    private LocalDateTime createdAt;
+    private String message;
 }
+
+
