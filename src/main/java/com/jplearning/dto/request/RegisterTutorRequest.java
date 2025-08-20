@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -30,6 +31,14 @@ public class RegisterTutorRequest {
     @NotBlank(message = "Confirm password is required")
     private String confirmPassword;
 
+    @NotBlank(message = "Identity card number is required")
+    @Pattern(regexp = "^[0-9]{9,12}$", message = "Identity card number must contain 9-12 digits")
+    private String identityCardNumber;
+
+    @NotBlank(message = "Home address is required")
+    @Size(min = 10, max = 500, message = "Home address must be between 10 and 500 characters")
+    private String homeAddress;
+
     private String teachingRequirements;
 
     @Valid
@@ -37,4 +46,6 @@ public class RegisterTutorRequest {
 
     @Valid
     private List<ExperienceRequest> experiences;
+
+    private List<MultipartFile> certificates;
 }

@@ -20,6 +20,12 @@ public class Tutor extends User {
     @Column(name = "teaching_requirements", columnDefinition = "TEXT")
     private String teachingRequirements;
 
+    @Column(name = "identity_card_number", length = 20)
+    private String identityCardNumber;
+
+    @Column(name = "home_address", columnDefinition = "TEXT")
+    private String homeAddress;
+
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "tutor_id")
     private List<Education> educations = new ArrayList<>();
@@ -28,8 +34,9 @@ public class Tutor extends User {
     @JoinColumn(name = "tutor_id")
     private List<Experience> experiences = new ArrayList<>();
 
-    @Column(name = "certificate_urls", columnDefinition = "TEXT[]")
     @ElementCollection
+    @CollectionTable(name = "tutor_certificate_urls", joinColumns = @JoinColumn(name = "tutor_user_id"))
+    @Column(name = "certificate_url")
     private List<String> certificateUrls = new ArrayList<>();
 
     // The below fields would be used for course creation and management

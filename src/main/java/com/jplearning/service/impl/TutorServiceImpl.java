@@ -47,8 +47,8 @@ public class TutorServiceImpl implements TutorService {
         // Get tutor
         Tutor tutor = getTutor(tutorId);
 
-        // Upload certificate to Cloudinary
-        Map<String, String> uploadResult = cloudinaryService.uploadFile(file);
+        // Upload certificate to Cloudinary as image
+        Map<String, String> uploadResult = cloudinaryService.uploadImage(file);
         String certificateUrl = uploadResult.get("secureUrl");
 
         // Add certificate URL to tutor's certificateUrls
@@ -131,19 +131,19 @@ public class TutorServiceImpl implements TutorService {
             throw new BadRequestException("Content type is missing");
         }
 
-        // Allow common document types for certificates
-        boolean isValidType = contentType.equals("application/pdf")
-                || contentType.equals("image/jpeg")
+        // Allow only image types for certificates (easier for Cloudinary)
+        boolean isValidType = contentType.equals("image/jpeg")
                 || contentType.equals("image/png")
-                || contentType.equals("image/jpg");
+                || contentType.equals("image/jpg")
+                || contentType.equals("image/webp");
 
         if (!isValidType) {
-            throw new BadRequestException("Certificate must be a PDF or image file (JPEG, PNG)");
+            throw new BadRequestException("Only image files (JPEG, JPG, PNG, WEBP) are allowed for certificates");
         }
 
-        // Check file size (max 5MB for certificates)
+        // Check file size (max 5MB for certificate images)
         if (file.getSize() > 5 * 1024 * 1024) {
-            throw new BadRequestException("Certificate file size should not exceed 5MB");
+            throw new BadRequestException("Certificate image size should not exceed 5MB");
         }
     }
 

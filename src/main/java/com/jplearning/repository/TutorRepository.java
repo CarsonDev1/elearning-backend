@@ -16,4 +16,9 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
 
     // Add this method
     long countByEnabled(boolean enabled);
+    
+    // Convenience method for pending tutors
+    default Page<Tutor> findByEnabledFalse(Pageable pageable) {
+        return findByEnabled(false, pageable);
+    }
 }

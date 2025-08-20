@@ -42,8 +42,26 @@ public class AuthController {
     }
 
     @PostMapping("/register/tutor")
-    @Operation(summary = "Register tutor", description = "Register new tutor account")
-    public ResponseEntity<MessageResponse> registerTutor(@Valid @RequestBody RegisterTutorRequest registerRequest) {
+    @Operation(summary = "Register tutor", description = "Register new tutor account with file uploads")
+    public ResponseEntity<MessageResponse> registerTutor(
+            @ModelAttribute TutorRegistrationUploadRequest uploadRequest
+    ) {
+        // Convert to RegisterTutorRequest
+        RegisterTutorRequest registerRequest = new RegisterTutorRequest();
+        registerRequest.setFullName(uploadRequest.getFullName());
+        registerRequest.setEmail(uploadRequest.getEmail());
+        registerRequest.setPhoneNumber(uploadRequest.getPhoneNumber());
+        registerRequest.setPassword(uploadRequest.getPassword());
+        registerRequest.setConfirmPassword(uploadRequest.getConfirmPassword());
+        registerRequest.setIdentityCardNumber(uploadRequest.getIdentityCardNumber());
+        registerRequest.setHomeAddress(uploadRequest.getHomeAddress());
+        registerRequest.setTeachingRequirements(uploadRequest.getTeachingRequirements());
+        
+        // TODO: Parse JSON strings for complex objects (educations, experiences)
+        // This would need to be implemented based on your JSON parsing logic
+        
+        registerRequest.setCertificates(uploadRequest.getCertificates());
+        
         return ResponseEntity.ok(authService.registerTutor(registerRequest));
     }
 
@@ -90,6 +108,13 @@ public class AuthController {
     private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        return userDetails.getId();
+        // Use reflection to access the id field since it's private
+        try {
+            java.lang.reflect.Field idField = UserDetailsImpl.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            return (Long) idField.get(userDetails);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to get user ID", e);
+        }
     }
 }

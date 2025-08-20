@@ -18,27 +18,12 @@ import org.mapstruct.factory.Mappers;
 public interface UserMapper {
     UserMapper INSTANCE = Mappers.getMapper(UserMapper.class);
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "roles", ignore = true)
-    @Mapping(target = "enabled", constant = "false")
-    @Mapping(target = "avatarUrl", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
     Student studentRequestToStudent(RegisterStudentRequest registerRequest);
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "roles", ignore = true)
-    @Mapping(target = "enabled", constant = "false")
-    @Mapping(target = "avatarUrl", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "certificateUrls", ignore = true)
     Tutor tutorRequestToTutor(RegisterTutorRequest registerRequest);
 
-    @Mapping(target = "id", ignore = true)
     Education educationRequestToEducation(EducationRequest educationRequest);
 
-    @Mapping(target = "id", ignore = true)
     Experience experienceRequestToExperience(ExperienceRequest experienceRequest);
 
     // Response mappings

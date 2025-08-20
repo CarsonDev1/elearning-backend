@@ -1,19 +1,20 @@
 package com.jplearning.service.impl;
 
 import com.jplearning.dto.request.*;
-import com.jplearning.dto.response.JwtResponse;
-import com.jplearning.dto.response.MessageResponse;
-import com.jplearning.dto.response.UserResponse;
+import com.jplearning.dto.response.*;
 import com.jplearning.entity.*;
 import com.jplearning.exception.BadRequestException;
 import com.jplearning.exception.ResourceNotFoundException;
 import com.jplearning.mapper.UserMapper;
 import com.jplearning.repository.*;
 import com.jplearning.security.jwt.JwtUtils;
-import com.jplearning.security.services.UserDetailsImpl;
 import com.jplearning.service.AuthService;
+import com.jplearning.service.CloudinaryService;
 import com.jplearning.service.EmailService;
+import com.jplearning.service.TutorEmailService;
 import com.jplearning.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -22,14 +23,15 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class AuthServiceImpl implements AuthService {
+    private static final Logger logger = LoggerFactory.getLogger(AuthServiceImpl.class);
     @Autowired
     private AuthenticationManager authenticationManager;
 
@@ -62,6 +64,12 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private TutorEmailService tutorEmailService;
+
+    @Autowired
+    private CloudinaryService cloudinaryService;
 
     @Override
     public JwtResponse authenticateUser(LoginRequest loginRequest) {
@@ -131,21 +139,19 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public MessageResponse registerTutor(RegisterTutorRequest registerRequest) {
-        // Validate if the email is already in use
+        // Check if email already exists
         if (userRepository.existsByEmail(registerRequest.getEmail())) {
-            throw new BadRequestException("Error: Email is already in use!");
+            throw new BadRequestException("Email is already in use!");
         }
 
-        // Validate if the phone number is already in use
-        if (registerRequest.getPhoneNumber() != null &&
-                !registerRequest.getPhoneNumber().isEmpty() &&
-                userRepository.existsByPhoneNumber(registerRequest.getPhoneNumber())) {
-            throw new BadRequestException("Error: Phone number is already in use!");
+        // Check if phone number already exists
+        if (userRepository.existsByPhoneNumber(registerRequest.getPhoneNumber())) {
+            throw new BadRequestException("Phone number is already in use!");
         }
 
-        // Validate if passwords match
+        // Validate password confirmation
         if (!registerRequest.getPassword().equals(registerRequest.getConfirmPassword())) {
-            throw new BadRequestException("Error: Passwords do not match!");
+            throw new BadRequestException("Passwords do not match!");
         }
 
         // Create new tutor account
@@ -159,14 +165,60 @@ public class AuthServiceImpl implements AuthService {
         roles.add(tutorRole);
         tutor.setRoles(roles);
 
-        // For tutors, account is disabled until approved by admin
-        // No email verification needed before admin approval
+        // For tutors, account is disabled until admin approval
         tutor.setEnabled(false);
+
+        // Process certificate uploads if provided
+        if (registerRequest.getCertificates() != null && !registerRequest.getCertificates().isEmpty()) {
+            logger.info("Processing {} certificate files for tutor registration", registerRequest.getCertificates().size());
+            List<String> certificateUrls = new ArrayList<>();
+            
+            for (MultipartFile certificateFile : registerRequest.getCertificates()) {
+                try {
+                    logger.info("Validating certificate file: {} (size: {} bytes)", 
+                              certificateFile.getOriginalFilename(), certificateFile.getSize());
+                    
+                    // Validate certificate file
+                    validateCertificateFile(certificateFile);
+                    
+                    logger.info("Uploading certificate to Cloudinary: {}", certificateFile.getOriginalFilename());
+                    
+                    // Upload to Cloudinary as image
+                    Map<String, String> uploadResult = cloudinaryService.uploadImage(certificateFile);
+                    String certificateUrl = uploadResult.get("secureUrl");
+                    certificateUrls.add(certificateUrl);
+                    
+                    logger.info("Successfully uploaded certificate. URL: {}", certificateUrl);
+                } catch (IOException e) {
+                    logger.error("Failed to upload certificate file: {}", certificateFile.getOriginalFilename(), e);
+                    throw new BadRequestException("Failed to upload certificate: " + e.getMessage());
+                }
+            }
+            
+            tutor.setCertificateUrls(certificateUrls);
+            logger.info("Successfully processed {} certificates for tutor registration", certificateUrls.size());
+        } else {
+            logger.info("No certificates provided for tutor registration");
+        }
 
         Tutor savedTutor = tutorRepository.save(tutor);
 
-        return new MessageResponse("Tutor registration submitted! Your application will be reviewed by an administrator. " +
-                "You will receive an email notification when your application is processed.");
+        // Send welcome email to tutor
+        tutorEmailService.sendWelcomeEmail(savedTutor.getEmail(), savedTutor.getFullName());
+
+        // Generate verification token
+        String verificationToken = UUID.randomUUID().toString();
+        PasswordResetToken token = new PasswordResetToken();
+        token.setToken(verificationToken);
+        token.setUser(savedTutor);
+        token.setExpiryDate(LocalDateTime.now().plusHours(24)); // 24 hours
+        tokenRepository.save(token);
+
+        // Send verification email
+        emailService.sendVerificationEmail(savedTutor.getEmail(), verificationToken);
+
+        return new MessageResponse("Tutor registration submitted! Please check your email for confirmation. " +
+                "Your application will be reviewed by an administrator.");
     }
 
     @Override
@@ -269,5 +321,30 @@ public class AuthServiceImpl implements AuthService {
         tokenRepository.delete(verificationToken);
 
         return new MessageResponse("Email verified successfully. You can now log in.");
+    }
+
+    private void validateCertificateFile(MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new BadRequestException("Certificate file cannot be empty");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null) {
+            throw new BadRequestException("Content type is missing");
+        }
+
+        // Allow only image types for certificates (easier for Cloudinary)
+        if (!contentType.equals("image/jpeg") && 
+            !contentType.equals("image/jpg") && 
+            !contentType.equals("image/png") && 
+            !contentType.equals("image/webp")) {
+            throw new BadRequestException("Only image files (JPEG, JPG, PNG, WEBP) are allowed for certificates");
+        }
+
+        // Check file size (limit to 5MB for images)
+        long maxSize = 5 * 1024 * 1024; // 5MB in bytes
+        if (file.getSize() > maxSize) {
+            throw new BadRequestException("Certificate image size cannot exceed 5MB");
+        }
     }
 }
