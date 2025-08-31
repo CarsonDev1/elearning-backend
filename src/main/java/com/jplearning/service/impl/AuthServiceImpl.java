@@ -24,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -329,22 +330,13 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String contentType = file.getContentType();
-        if (contentType == null) {
-            throw new BadRequestException("Content type is missing");
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new BadRequestException("Certificate must be an image file");
         }
 
-        // Allow only image types for certificates (easier for Cloudinary)
-        if (!contentType.equals("image/jpeg") && 
-            !contentType.equals("image/jpg") && 
-            !contentType.equals("image/png") && 
-            !contentType.equals("image/webp")) {
-            throw new BadRequestException("Only image files (JPEG, JPG, PNG, WEBP) are allowed for certificates");
-        }
-
-        // Check file size (limit to 5MB for images)
-        long maxSize = 5 * 1024 * 1024; // 5MB in bytes
-        if (file.getSize() > maxSize) {
-            throw new BadRequestException("Certificate image size cannot exceed 5MB");
+        // Check file size (max 5MB for certificates, same as avatar)
+        if (file.getSize() > 5 * 1024 * 1024) {
+            throw new BadRequestException("Certificate image size should not exceed 5MB");
         }
     }
 }
