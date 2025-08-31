@@ -4,6 +4,9 @@ import com.jplearning.dto.request.*;
 import com.jplearning.dto.response.JwtResponse;
 import com.jplearning.dto.response.MessageResponse;
 import com.jplearning.dto.response.UserResponse;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 public interface AuthService {
     /**
@@ -26,6 +29,14 @@ public interface AuthService {
      * @return registration status message
      */
     MessageResponse registerTutor(RegisterTutorRequest registerRequest);
+
+    /**
+     * Uploads a certificate file and returns the URL
+     * @param file certificate file to upload
+     * @return certificate URL
+     * @throws IOException if upload fails
+     */
+    String uploadCertificateFile(MultipartFile file) throws IOException;
 
     /**
      * Initiates the password reset process

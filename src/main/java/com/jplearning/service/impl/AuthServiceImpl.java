@@ -169,35 +169,11 @@ public class AuthServiceImpl implements AuthService {
         // For tutors, account is disabled until admin approval
         tutor.setEnabled(false);
 
-        // Process certificate uploads if provided
-        if (registerRequest.getCertificates() != null && !registerRequest.getCertificates().isEmpty()) {
-            logger.info("Processing {} certificate files for tutor registration", registerRequest.getCertificates().size());
-            List<String> certificateUrls = new ArrayList<>();
-            
-            for (MultipartFile certificateFile : registerRequest.getCertificates()) {
-                try {
-                    logger.info("Validating certificate file: {} (size: {} bytes)", 
-                              certificateFile.getOriginalFilename(), certificateFile.getSize());
-                    
-                    // Validate certificate file
-                    validateCertificateFile(certificateFile);
-                    
-                    logger.info("Uploading certificate to Cloudinary: {}", certificateFile.getOriginalFilename());
-                    
-                    // Upload to Cloudinary as image
-                    Map<String, String> uploadResult = cloudinaryService.uploadImage(certificateFile);
-                    String certificateUrl = uploadResult.get("secureUrl");
-                    certificateUrls.add(certificateUrl);
-                    
-                    logger.info("Successfully uploaded certificate. URL: {}", certificateUrl);
-                } catch (IOException e) {
-                    logger.error("Failed to upload certificate file: {}", certificateFile.getOriginalFilename(), e);
-                    throw new BadRequestException("Failed to upload certificate: " + e.getMessage());
-                }
-            }
-            
-            tutor.setCertificateUrls(certificateUrls);
-            logger.info("Successfully processed {} certificates for tutor registration", certificateUrls.size());
+        // Process certificate URLs if provided
+        if (registerRequest.getCertificateUrls() != null && !registerRequest.getCertificateUrls().isEmpty()) {
+            logger.info("Processing {} certificate URLs for tutor registration", registerRequest.getCertificateUrls().size());
+            tutor.setCertificateUrls(registerRequest.getCertificateUrls());
+            logger.info("Successfully processed {} certificates for tutor registration", registerRequest.getCertificateUrls().size());
         } else {
             logger.info("No certificates provided for tutor registration");
         }
@@ -322,6 +298,25 @@ public class AuthServiceImpl implements AuthService {
         tokenRepository.delete(verificationToken);
 
         return new MessageResponse("Email verified successfully. You can now log in.");
+    }
+
+    @Override
+    public String uploadCertificateFile(MultipartFile file) throws IOException {
+        logger.info("Uploading certificate file: {} (size: {} bytes)", 
+                  file.getOriginalFilename(), file.getSize());
+        
+        // Validate certificate file
+        validateCertificateFile(file);
+        
+        logger.info("Uploading certificate to Cloudinary: {}", file.getOriginalFilename());
+        
+        // Upload to Cloudinary as image
+        Map<String, String> uploadResult = cloudinaryService.uploadImage(file);
+        String certificateUrl = uploadResult.get("secureUrl");
+        
+        logger.info("Successfully uploaded certificate. URL: {}", certificateUrl);
+        
+        return certificateUrl;
     }
 
     private void validateCertificateFile(MultipartFile file) {

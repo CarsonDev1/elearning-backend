@@ -12,13 +12,17 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.logging.Logger;
+import com.jplearning.dto.response.CertificateUploadResponse;
 
 @RestController
 @RequestMapping("/auth")
@@ -41,8 +45,8 @@ public class AuthController {
         return ResponseEntity.ok(authService.registerStudent(registerRequest));
     }
 
-    @PostMapping("/register/tutor")
-    @Operation(summary = "Register tutor", description = "Register new tutor account with file uploads")
+    @PostMapping(value = "/register/tutor", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Register tutor", description = "Register new tutor account with certificate URLs")
     public ResponseEntity<MessageResponse> registerTutor(
             @ModelAttribute TutorRegistrationUploadRequest uploadRequest
     ) {
@@ -60,9 +64,23 @@ public class AuthController {
         // TODO: Parse JSON strings for complex objects (educations, experiences)
         // This would need to be implemented based on your JSON parsing logic
         
-        registerRequest.setCertificates(uploadRequest.getCertificates());
+        // Convert certificate URLs from string to list
+        if (uploadRequest.getCertificateUrls() != null && !uploadRequest.getCertificateUrls().isEmpty()) {
+            registerRequest.setCertificateUrls(uploadRequest.getCertificateUrls());
+        }
         
         return ResponseEntity.ok(authService.registerTutor(registerRequest));
+    }
+
+    @PostMapping(value = "/upload-certificate", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload certificate file", description = "Upload a certificate file and return the URL")
+    public ResponseEntity<CertificateUploadResponse> uploadCertificate(@RequestParam("file") MultipartFile file) {
+        try {
+            String certificateUrl = authService.uploadCertificateFile(file);
+            return ResponseEntity.ok(new CertificateUploadResponse(certificateUrl));
+        } catch (IOException e) {
+            throw new BadRequestException("Failed to upload certificate: " + e.getMessage());
+        }
     }
 
     @PostMapping("/forgot-password")

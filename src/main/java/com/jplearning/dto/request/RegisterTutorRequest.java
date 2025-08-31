@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -47,5 +46,5 @@ public class RegisterTutorRequest {
     @Valid
     private List<ExperienceRequest> experiences;
 
-    private List<MultipartFile> certificates;
+    private List<String> certificateUrls;
 }

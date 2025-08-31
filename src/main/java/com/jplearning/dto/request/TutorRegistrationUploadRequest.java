@@ -1,7 +1,6 @@
 package com.jplearning.dto.request;
 
 import lombok.Data;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -17,5 +16,5 @@ public class TutorRegistrationUploadRequest {
     private String teachingRequirements;
     private String educationsJson;
     private String experiencesJson;
-    private List<MultipartFile> certificates;
+    private List<String> certificateUrls;
 }
