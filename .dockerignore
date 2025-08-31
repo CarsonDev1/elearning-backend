@@ -1,0 +1,38 @@
+# Maven
+target/
+!target/*.jar
+!target/classes/
+!target/dependency/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# Test files
+src/test/
+test/
+
+# Build tools
+mvnw
+mvnw.cmd
+.mvn/
+
+# Other
+node_modules/
+npm-debug.log*
