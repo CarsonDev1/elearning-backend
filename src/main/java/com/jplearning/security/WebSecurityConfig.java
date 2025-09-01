@@ -61,39 +61,37 @@ public class WebSecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.cors(cors -> cors.configurationSource(request -> {
-                    CorsConfiguration configuration = new CorsConfiguration();
-                    // Chỉ cho phép frontend domain
-                    configuration.setAllowedOrigins(Arrays.asList(
-                            "https://frontend-elearning-flax.vercel.app",
-                            "http://14.225.205.107:8082"
-                    ));
-                    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                    configuration.setAllowedHeaders(Arrays.asList("*"));
-                    configuration.setAllowCredentials(true);
-                    return configuration;
-                }))
-                .csrf(AbstractHttpConfigurer::disable)
-                .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth ->
-                        auth.requestMatchers("/auth/**").permitAll()
-                                .requestMatchers("/auth/verify-email").permitAll()
-                                .requestMatchers("/auth/reset-password").permitAll()
-                                .requestMatchers("/auth/forgot-password").permitAll()
-                                .requestMatchers("/courses").permitAll()
-                                .requestMatchers("/combos").permitAll()
-                                .requestMatchers("/combos/search").permitAll()
-                                .requestMatchers("/combos/{id}").permitAll()
-                                .requestMatchers("/courses/search").permitAll()
-                                .requestMatchers("/courses/{id}").permitAll()
-                                .requestMatchers("/levels").permitAll()
-                                .requestMatchers("/files/**").permitAll()
-                                .requestMatchers("/api-docs/**").permitAll()
-                                .requestMatchers("/swagger-ui/**").permitAll()
-                                .requestMatchers("/swagger-ui.html").permitAll()
-                                .requestMatchers("/actuator/health").permitAll()
-                                .anyRequest().authenticated()
-                );
+                CorsConfiguration configuration = new CorsConfiguration();
+                // CHO PHÉP TẤT CẢ CORS
+                configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+                configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                configuration.setAllowedHeaders(Arrays.asList("*"));
+                configuration.setAllowCredentials(true);
+                configuration.setMaxAge(3600L);
+                return configuration;
+            }))
+            .csrf(AbstractHttpConfigurer::disable)
+            .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth ->
+                    auth.requestMatchers("/auth/**").permitAll()
+                            .requestMatchers("/auth/verify-email").permitAll()
+                            .requestMatchers("/auth/reset-password").permitAll()
+                            .requestMatchers("/auth/forgot-password").permitAll()
+                            .requestMatchers("/courses").permitAll()
+                            .requestMatchers("/combos").permitAll()
+                            .requestMatchers("/combos/search").permitAll()
+                            .requestMatchers("/combos/{id}").permitAll()
+                            .requestMatchers("/courses/search").permitAll()
+                            .requestMatchers("/courses/{id}").permitAll()
+                            .requestMatchers("/levels").permitAll()
+                            .requestMatchers("/files/**").permitAll()
+                            .requestMatchers("/api-docs/**").permitAll()
+                            .requestMatchers("/swagger-ui/**").permitAll()
+                            .requestMatchers("/swagger-ui.html").permitAll()
+                            .requestMatchers("/actuator/health").permitAll()
+                            .anyRequest().authenticated()
+            );
 
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
