@@ -23,7 +23,6 @@ services:
             timeout: 5s
             retries: 5
 
-<<<<<<< Updated upstream
     # Spring Boot Application
     app:
         build:
@@ -109,93 +108,6 @@ services:
             - ./nginx.conf:/etc/nginx/nginx.conf:ro
         networks:
             - japanese-learning-network
-=======
-  # Spring Boot Application
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: japanese-learning-app
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      # Database
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/japanese_learning
-      SPRING_DATASOURCE_USERNAME: japanese_learning_user
-      SPRING_DATASOURCE_PASSWORD: JapaneseLearn2024!@#
-      # JPA
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SPRING_JPA_SHOW_SQL: "false"
-      # JWT
-      APP_JWT_SECRET: super-secret-jwt-key-for-japanese-learning-platform-2024-must-be-at-least-32-chars
-      APP_JWT_EXPIRATION: 86400000
-      # Server
-      SERVER_PORT: 8082
-      SERVER_SERVLET_CONTEXT_PATH: /api
-      # Cloudinary
-      CLOUDINARY_CLOUD_NAME: dugsysqjv
-      CLOUDINARY_API_KEY: 145165616343799
-      CLOUDINARY_API_SECRET: Fnj2heXwZUzkeZyUgCsQCn8KQsY
-      # VNPay
-      VNPAY_VERSION: 2.1.0
-      VNPAY_TMN_CODE: 4680X3ZG
-      VNPAY_HASH_SECRET: J5RKHN2SW0YUS4L6MYSYQRXIA6W9NZ6I
-      VNPAY_PAYMENT_URL: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
-      VNPAY_RETURN_URL: https://frontend-elearning-flax.vercel.app/vnpay-return
-      VNPAY_API_URL: https://sandbox.vnpayment.vn/merchant_webapi/api/transaction
-      VNPAY_COMMAND: pay
-      VNPAY_CURR_CODE: VND
-      VNPAY_LOCALE: vn
-      # Speech Recognition
-      SPEECH_GEMINI_API_KEY: AIzaSyB5NVxz720icaYL7lOMorz1Rbb--tr22r8
-      SPEECH_GEMINI_ENDPOINT: https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent
-      # Email
-      SPRING_MAIL_HOST: smtp.gmail.com
-      SPRING_MAIL_PORT: 587
-      SPRING_MAIL_USERNAME: carsonpro21@gmail.com
-      SPRING_MAIL_PASSWORD: lqqtxeubbmhipdon
-      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "true"
-      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "true"
-      # Application
-      APP_FRONTEND_URL: https://frontend-elearning-flax.vercel.app
-      APP_EMAIL_VERIFICATION_EXPIRATION: 86400000
-      # Spring Profile
-      SPRING_PROFILES_ACTIVE: prod
-      # Logging
-      LOGGING_LEVEL_ROOT: INFO
-      LOGGING_LEVEL_COM_JPLEARNING: INFO
-      LOGGING_FILE_NAME: /app/logs/application.log
-    volumes:
-      - app_logs:/app/logs
-    ports:
-      - "8082:8082"
-    networks:
-      - japanese-learning-network
-   # healthcheck:
-     # test: ["CMD", "curl", "-f", "http://localhost:8082/api/actuator/health"]
-     # interval: 30s
-     # timeout: 10s
-     # retries: 5
-     # start_period: 90s
-
-  # Nginx Reverse Proxy with SSL
-  nginx:
-    image: nginx:alpine
-    container_name: japanese-learning-nginx
-    restart: unless-stopped
-    depends_on:
-      - app
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./ssl:/etc/nginx/ssl:ro
-    networks:
-      - japanese-learning-network
->>>>>>> Stashed changes
 
 volumes:
     postgres_data:
@@ -204,11 +116,5 @@ volumes:
         driver: local
 
 networks:
-<<<<<<< Updated upstream
     japanese-learning-network:
         driver: bridge
-=======
-  japanese-learning-network:
-    driver: bridge
-
->>>>>>> Stashed changes
