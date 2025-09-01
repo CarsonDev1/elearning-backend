@@ -62,25 +62,9 @@ public class WebSecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration configuration = new CorsConfiguration();
-                    
-                    // Cho phép tất cả origins
-                    configuration.setAllowedOriginPatterns(Arrays.asList("*"));
-                    
-                    // Cho phép tất cả methods
-                    configuration.setAllowedMethods(Arrays.asList("*"));
-                    
-                    // Cho phép tất cả headers
+                    configuration.setAllowedOrigins(Arrays.asList("*"));
+                    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     configuration.setAllowedHeaders(Arrays.asList("*"));
-                    
-                    // Cho phép credentials (cookies, authorization headers, etc.)
-                    configuration.setAllowCredentials(true);
-                    
-                    // Expose headers cho client
-                    configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
-                    
-                    // Cache preflight requests
-                    configuration.setMaxAge(3600L);
-                    
                     return configuration;
                 }))
                 .csrf(AbstractHttpConfigurer::disable)
