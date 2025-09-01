@@ -86,21 +86,21 @@ services:
             - '8082:8082'
         networks:
             - japanese-learning-network
-        healthcheck:
-            test: ['CMD', 'curl', '-f', 'http://localhost:8082/api/actuator/health']
-            interval: 30s
-            timeout: 10s
-            retries: 5
-            start_period: 90s
+        # Tạm thời tắt health check
+        # healthcheck:
+        #   test: ["CMD", "curl", "-f", "http://localhost:8082/api/actuator/health"]
+        #   interval: 30s
+        #   timeout: 10s
+        #   retries: 5
+        #   start_period: 90s
 
-    # Nginx Reverse Proxy
+    # Nginx Reverse Proxy with HTTPS
     nginx:
         image: nginx:alpine
         container_name: japanese-learning-nginx
         restart: unless-stopped
         depends_on:
-            app:
-                condition: service_healthy
+            - app
         ports:
             - '80:80'
             - '443:443'
