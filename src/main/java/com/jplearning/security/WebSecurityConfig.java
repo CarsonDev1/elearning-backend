@@ -63,7 +63,10 @@ public class WebSecurityConfig {
         http.cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration configuration = new CorsConfiguration();
                     // Chỉ cho phép frontend domain
-                    configuration.setAllowedOrigins(Arrays.asList("https://frontend-elearning-flax.vercel.app"));
+                    configuration.setAllowedOrigins(Arrays.asList(
+                            "https://frontend-elearning-flax.vercel.app",
+                            "http://14.225.205.107:8082"
+                    ));
                     configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     configuration.setAllowedHeaders(Arrays.asList("*"));
                     configuration.setAllowCredentials(true);
