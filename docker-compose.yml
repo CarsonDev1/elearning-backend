@@ -86,13 +86,6 @@ services:
             - '8082:8082'
         networks:
             - japanese-learning-network
-        healthcheck:
-            test: ['CMD', 'curl', '-f', 'http://localhost:8082/api/actuator/health']
-            interval: 30s
-            timeout: 10s
-            retries: 5
-            start_period: 90s
-
     # Nginx Reverse Proxy
     nginx:
         image: nginx:alpine
