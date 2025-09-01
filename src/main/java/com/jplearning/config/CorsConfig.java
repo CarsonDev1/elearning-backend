@@ -14,8 +14,8 @@ public class CorsConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
 
-        // Allow all origins
-        config.addAllowedOrigin("*");
+        // Chỉ cho phép frontend domain
+        config.addAllowedOrigin("https://frontend-elearning-flax.vercel.app");
 
         // Allow all headers
         config.addAllowedHeader("*");
@@ -24,7 +24,7 @@ public class CorsConfig {
         config.addAllowedMethod("*");
 
         // Allow credentials (cookies, authentication)
-        config.setAllowCredentials(false);
+        config.setAllowCredentials(true);
 
         // Apply this configuration to all paths
         source.registerCorsConfiguration("/**", config);

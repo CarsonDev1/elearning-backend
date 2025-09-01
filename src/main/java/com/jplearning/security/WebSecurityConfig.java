@@ -62,25 +62,11 @@ public class WebSecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration configuration = new CorsConfiguration();
-                    
-                    // Cho phép tất cả origins
-                    configuration.setAllowedOriginPatterns(Arrays.asList("*"));
-                    
-                    // Cho phép tất cả methods
-                    configuration.setAllowedMethods(Arrays.asList("*"));
-                    
-                    // Cho phép tất cả headers
+                    // Chỉ cho phép frontend domain
+                    configuration.setAllowedOrigins(Arrays.asList("https://frontend-elearning-flax.vercel.app"));
+                    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     configuration.setAllowedHeaders(Arrays.asList("*"));
-                    
-                    // Cho phép credentials (cookies, authorization headers, etc.)
                     configuration.setAllowCredentials(true);
-                    
-                    // Expose headers cho client
-                    configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
-                    
-                    // Cache preflight requests
-                    configuration.setMaxAge(3600L);
-                    
                     return configuration;
                 }))
                 .csrf(AbstractHttpConfigurer::disable)
@@ -102,6 +88,7 @@ public class WebSecurityConfig {
                                 .requestMatchers("/api-docs/**").permitAll()
                                 .requestMatchers("/swagger-ui/**").permitAll()
                                 .requestMatchers("/swagger-ui.html").permitAll()
+                                .requestMatchers("/actuator/health").permitAll()
                                 .anyRequest().authenticated()
                 );
 
