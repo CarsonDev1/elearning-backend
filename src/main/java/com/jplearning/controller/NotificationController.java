@@ -1,16 +1,11 @@
 package com.jplearning.controller;
 
-import com.jplearning.dto.request.BulkNotificationRequest;
-import com.jplearning.dto.request.NotificationRequest;
-import com.jplearning.dto.response.MessageResponse;
-import com.jplearning.dto.response.NotificationCountResponse;
 import com.jplearning.dto.response.NotificationResponse;
 import com.jplearning.security.services.UserDetailsImpl;
 import com.jplearning.service.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,7 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/notifications")
+@RequestMapping("/api/notifications")
 @Tag(name = "Notifications", description = "APIs for notification management")
 @CrossOrigin(origins = "*")
 public class NotificationController {
@@ -52,9 +47,9 @@ public class NotificationController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @PreAuthorize("hasRole('STUDENT') or hasRole('TUTOR') or hasRole('ADMIN')")
-    public ResponseEntity<NotificationCountResponse> getUnreadCount() {
+    public ResponseEntity<Long> getUnreadCount() {
         Long userId = getCurrentUserId();
-        return ResponseEntity.ok(notificationService.getUnreadCount(userId));
+        return ResponseEntity.ok(notificationService.getUnreadNotificationCount(userId));
     }
 
     @PutMapping("/{id}/read")
@@ -64,9 +59,10 @@ public class NotificationController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @PreAuthorize("hasRole('STUDENT') or hasRole('TUTOR') or hasRole('ADMIN')")
-    public ResponseEntity<MessageResponse> markAsRead(@PathVariable Long id) {
+    public ResponseEntity<Void> markAsRead(@PathVariable("id") Long notificationId) {
         Long userId = getCurrentUserId();
-        return ResponseEntity.ok(notificationService.markAsRead(id, userId));
+        notificationService.markNotificationAsRead(notificationId, userId);
+        return ResponseEntity.ok().build();
     }
 
     @PutMapping("/mark-all-read")
@@ -76,45 +72,10 @@ public class NotificationController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @PreAuthorize("hasRole('STUDENT') or hasRole('TUTOR') or hasRole('ADMIN')")
-    public ResponseEntity<MessageResponse> markAllAsRead() {
+    public ResponseEntity<Void> markAllAsRead() {
         Long userId = getCurrentUserId();
-        return ResponseEntity.ok(notificationService.markAllAsRead(userId));
-    }
-
-    @DeleteMapping("/{id}")
-    @Operation(
-            summary = "Delete notification",
-            description = "Delete a specific notification",
-            security = @SecurityRequirement(name = "bearerAuth")
-    )
-    @PreAuthorize("hasRole('STUDENT') or hasRole('TUTOR') or hasRole('ADMIN')")
-    public ResponseEntity<MessageResponse> deleteNotification(@PathVariable Long id) {
-        Long userId = getCurrentUserId();
-        return ResponseEntity.ok(notificationService.deleteNotification(id, userId));
-    }
-
-    @PostMapping
-    @Operation(
-            summary = "Create notification",
-            description = "Create a new notification (admin only)",
-            security = @SecurityRequirement(name = "bearerAuth")
-    )
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<NotificationResponse> createNotification(
-            @Valid @RequestBody NotificationRequest request) {
-        return ResponseEntity.ok(notificationService.createNotification(request));
-    }
-
-    @PostMapping("/bulk")
-    @Operation(
-            summary = "Create bulk notifications",
-            description = "Create notifications for multiple users (admin only)",
-            security = @SecurityRequirement(name = "bearerAuth")
-    )
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<MessageResponse> createBulkNotifications(
-            @Valid @RequestBody BulkNotificationRequest request) {
-        return ResponseEntity.ok(notificationService.createBulkNotifications(request));
+        notificationService.markAllNotificationsAsRead(userId);
+        return ResponseEntity.ok().build();
     }
 
     private Long getCurrentUserId() {

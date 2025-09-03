@@ -336,7 +336,6 @@ public class VoucherServiceImpl implements VoucherService {
                             .discountPercentage(combo.getDiscountPercentage())
                             .thumbnailUrl(combo.getThumbnailUrl())
                             .courseCount(combo.getCourses().size())
-                            .validUntil(combo.getValidUntil())
                             .build())
                     .collect(Collectors.toList());
         }

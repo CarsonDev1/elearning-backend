@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -20,5 +19,4 @@ public class ComboBriefResponse {
     private Integer discountPercentage;
     private String thumbnailUrl;
     private Integer courseCount;
-    private LocalDateTime validUntil;
 }

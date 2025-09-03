@@ -10,6 +10,7 @@ import com.jplearning.exception.BadRequestException;
 import com.jplearning.exception.ResourceNotFoundException;
 import com.jplearning.repository.*;
 import com.jplearning.service.DiscussionService;
+import com.jplearning.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -44,6 +45,9 @@ public class DiscussionServiceImpl implements DiscussionService {
     @Autowired
     private TutorRepository tutorRepository;
 
+    @Autowired
+    private NotificationService notificationService;
+
     @Override
     @Transactional
     public DiscussionResponse createDiscussion(Long userId, DiscussionRequest request) {
@@ -65,6 +69,16 @@ public class DiscussionServiceImpl implements DiscussionService {
                 .build();
 
         Discussion savedDiscussion = discussionRepository.save(discussion);
+
+        // Send notification to all tutors about new discussion
+        String title = "Thảo luận mới";
+        String message = String.format("Học viên %s đã tạo thảo luận mới: '%s' trong bài học '%s'", 
+                user.getFullName(), request.getTitle(), lesson.getTitle());
+        String actionUrl = "/discussions/" + savedDiscussion.getId();
+        String actionText = "Xem thảo luận";
+
+        notificationService.createNotificationForAllTutors(
+                title, message, Notification.NotificationType.DISCUSSION_REPLY, actionUrl, actionText);
 
         return mapToDiscussionResponse(savedDiscussion);
     }
@@ -163,6 +177,36 @@ public class DiscussionServiceImpl implements DiscussionService {
                 .build();
 
         Comment savedComment = commentRepository.save(comment);
+
+        // Send notification to all tutors about new comment (only if comment is from student)
+        System.out.println("=== DEBUG NOTIFICATION ===");
+        System.out.println("User ID: " + user.getId());
+        System.out.println("User name: " + user.getFullName());
+        System.out.println("User roles: " + user.getRoles().stream().map(role -> role.getName().name()).collect(Collectors.joining(", ")));
+        
+        boolean isStudent = user.getRoles().stream().anyMatch(role -> role.getName() == Role.ERole.ROLE_STUDENT);
+        System.out.println("Is student: " + isStudent);
+        
+        if (isStudent) {
+            System.out.println("Creating notification for tutors...");
+            String title = "Bình luận mới trong thảo luận";
+            String message = String.format("Học viên %s đã bình luận trong thảo luận: '%s'", 
+                    user.getFullName(), discussion.getTitle());
+            String actionUrl = "/discussions/" + discussionId;
+            String actionText = "Xem thảo luận";
+
+            try {
+                notificationService.createNotificationForAllTutors(
+                        title, message, Notification.NotificationType.DISCUSSION_REPLY, actionUrl, actionText);
+                System.out.println("Notification created successfully!");
+            } catch (Exception e) {
+                System.err.println("Error creating notification: " + e.getMessage());
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println("User is not a student, skipping notification");
+        }
+        System.out.println("=== END DEBUG ===");
 
         return mapToCommentResponse(savedComment);
     }

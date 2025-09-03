@@ -63,8 +63,6 @@ public class ComboServiceImpl implements ComboService {
                 .discountPercentage(request.getDiscountPercentage())
                 .thumbnailUrl(request.getThumbnailUrl())
                 .isActive(request.getIsActive())
-                .validUntil(request.getValidUntil())
-                .accessPeriodMonths(request.getAccessPeriodMonths())
                 .courses(new HashSet<>(courses))
                 .build();
 
@@ -100,8 +98,6 @@ public class ComboServiceImpl implements ComboService {
             combo.setThumbnailUrl(request.getThumbnailUrl());
         }
         combo.setActive(request.getIsActive());
-        combo.setValidUntil(request.getValidUntil());
-        combo.setAccessPeriodMonths(request.getAccessPeriodMonths());
         combo.setCourses(new HashSet<>(courses));
 
         CourseCombo updatedCombo = comboRepository.save(combo);
@@ -136,8 +132,7 @@ public class ComboServiceImpl implements ComboService {
 
     @Override
     public Page<ComboResponse> getActiveCombos(Pageable pageable) {
-        Page<CourseCombo> combos = comboRepository.findByIsActiveTrueAndValidUntilAfter(
-                LocalDateTime.now(), pageable);
+        Page<CourseCombo> combos = comboRepository.findByIsActiveTrue(pageable);
         return combos.map(this::mapToResponse);
     }
 
@@ -232,8 +227,6 @@ public class ComboServiceImpl implements ComboService {
                 .thumbnailUrl(combo.getThumbnailUrl())
                 .isActive(combo.isActive())
                 .courses(courseResponses)
-                .validUntil(combo.getValidUntil())
-                .accessPeriodMonths(combo.getAccessPeriodMonths())
                 .createdAt(combo.getCreatedAt())
                 .updatedAt(combo.getUpdatedAt())
                 .build();
@@ -248,7 +241,6 @@ public class ComboServiceImpl implements ComboService {
                 .discountPercentage(combo.getDiscountPercentage())
                 .thumbnailUrl(combo.getThumbnailUrl())
                 .courseCount(combo.getCourses().size())
-                .validUntil(combo.getValidUntil())
                 .build();
     }
 }

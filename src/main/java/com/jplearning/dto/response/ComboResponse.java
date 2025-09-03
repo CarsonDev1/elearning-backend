@@ -23,8 +23,6 @@ public class ComboResponse {
     private String thumbnailUrl;
     private boolean isActive;
     private List<CourseBriefResponse> courses;
-    private LocalDateTime validUntil;
-    private Integer accessPeriodMonths;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

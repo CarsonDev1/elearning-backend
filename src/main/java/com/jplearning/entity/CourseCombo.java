@@ -39,7 +39,7 @@ public class CourseCombo {
     @Column(name = "discount_percentage")
     private Integer discountPercentage;
 
-    @Column(name = "thumbnail_url")
+    @Column(name = "thumbnail_url", columnDefinition = "TEXT")
     private String thumbnailUrl;
 
     @Column(name = "is_active", nullable = false)
@@ -53,11 +53,7 @@ public class CourseCombo {
     )
     private Set<Course> courses = new HashSet<>();
 
-    @Column(name = "valid_until")
-    private LocalDateTime validUntil;
-
-    @Column(name = "access_period_months")
-    private Integer accessPeriodMonths;
+    // Removed: validUntil and accessPeriodMonths per business change
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

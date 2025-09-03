@@ -99,7 +99,7 @@ public class VnPayServiceImpl implements VnPayService {
                     .orElseThrow(() -> new ResourceNotFoundException("Course combo not found with id: " + request.getComboId()));
 
             // Ensure combo is active
-            if (!combo.isActive() || (combo.getValidUntil() != null && combo.getValidUntil().isBefore(LocalDateTime.now()))) {
+            if (!combo.isActive()) {
                 throw new BadRequestException("Course combo is not available for purchase");
             }
 

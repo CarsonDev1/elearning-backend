@@ -1,7 +1,6 @@
 package com.jplearning.dto.request;
 
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -10,7 +9,6 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -41,9 +39,5 @@ public class ComboRequest {
     @NotEmpty(message = "Course IDs are required")
     private List<Long> courseIds;
 
-    @Future(message = "Valid until date must be in the future")
-    private LocalDateTime validUntil;
-
-    @Positive(message = "Access period must be positive")
-    private Integer accessPeriodMonths;
+    // Removed: validUntil and accessPeriodMonths
 }

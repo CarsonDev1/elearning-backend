@@ -105,7 +105,14 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
         // Create enrollment notification
         try {
-            notificationService.createEnrollmentNotification(studentId, course.getTitle(), courseId);
+            notificationService.createNotification(
+                studentId, 
+                "Đăng ký khóa học thành công", 
+                "Bạn đã đăng ký thành công khóa học: " + course.getTitle(),
+                Notification.NotificationType.COURSE_ENROLLMENT,
+                "/courses/" + courseId,
+                "Xem khóa học"
+            );
         } catch (Exception e) {
             // Log error but don't fail the enrollment
             System.err.println("Failed to create enrollment notification: " + e.getMessage());
@@ -127,7 +134,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Course combo not found with id: " + comboId));
 
         // Check if combo is active
-        if (!combo.isActive() || (combo.getValidUntil() != null && combo.getValidUntil().isBefore(LocalDateTime.now()))) {
+        if (!combo.isActive()) {
             throw new BadRequestException("Course combo is not available for enrollment");
         }
 
@@ -159,10 +166,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                     .combo(combo)
                     .build();
 
-            // Set expiry date if applicable
-            if (combo.getAccessPeriodMonths() != null && combo.getAccessPeriodMonths() > 0) {
-                enrollment.setExpiryDate(LocalDateTime.now().plusMonths(combo.getAccessPeriodMonths()));
-            }
+            // Access period removed per business change
 
             // Save enrollment
             Enrollment savedEnrollment = enrollmentRepository.save(enrollment);
