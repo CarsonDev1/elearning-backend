@@ -8,3 +8,5 @@ ALTER TABLE course_combos DROP COLUMN IF EXISTS valid_until;
 
 -- Verify the table structure
 -- \d+ course_combos
+
+

@@ -2,6 +2,7 @@ package com.jplearning.service;
 
 import com.jplearning.dto.response.EnrollmentResponse;
 import com.jplearning.entity.Payment;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
@@ -53,17 +54,16 @@ public interface EnrollmentService {
 
     /**
      * Check if student is enrolled in a course
-     * @param studentId ID of the student
-     * @param courseId ID of the course
-     * @return true if student is enrolled in course
      */
     boolean isStudentEnrolledInCourse(Long studentId, Long courseId);
 
     /**
      * Check if student is enrolled in a combo
-     * @param studentId ID of the student
-     * @param comboId ID of the combo
-     * @return true if student is enrolled in combo
      */
     boolean isStudentEnrolledInCombo(Long studentId, Long comboId);
+
+    /**
+     * Get paged completed enrollments that have certificates (for profile)
+     */
+    Page<EnrollmentResponse> getMyCertificates(Long studentId, int page, int size);
 }

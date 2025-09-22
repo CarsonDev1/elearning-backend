@@ -42,4 +42,7 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     List<Enrollment> findByCourseId(Long courseId);
 
     List<Enrollment> findByPayment(Payment payment);
+
+    // New: paged completed enrollments for a student
+    Page<Enrollment> findByStudentIdAndIsCompletedTrue(Long studentId, Pageable pageable);
 }

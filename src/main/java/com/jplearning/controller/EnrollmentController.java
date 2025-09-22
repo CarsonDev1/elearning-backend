@@ -12,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
@@ -69,6 +70,21 @@ public class EnrollmentController {
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<String> getCertificate(@PathVariable Long enrollmentId) {
         return ResponseEntity.ok(enrollmentService.generateCertificate(enrollmentId));
+    }
+
+    @GetMapping("/my-certificates")
+    @Operation(
+            summary = "Get my certificates",
+            description = "Get paged certificates for the current student",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<Page<EnrollmentResponse>> getMyCertificates(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Long studentId = getCurrentUserId();
+        return ResponseEntity.ok(enrollmentService.getMyCertificates(studentId, page, size));
     }
 
     @GetMapping("/check-combo/{comboId}")

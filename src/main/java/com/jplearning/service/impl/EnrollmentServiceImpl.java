@@ -17,6 +17,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -272,9 +276,29 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 enrollment.setProgressPercentage(Math.min(progressPercentage, 100)); // Cap at 100%
 
                 // Check if course is completed
-                if (enrollment.getProgressPercentage() >= 100) {
+                if (enrollment.getProgressPercentage() >= 100 && !enrollment.isCompleted()) {
                     enrollment.setCompleted(true);
                     enrollment.setCompletedAt(LocalDateTime.now());
+
+                    // Auto-generate certificate if not exists
+                    if (enrollment.getCertificateUrl() == null || enrollment.getCertificateUrl().isBlank()) {
+                        String certificateUrl = certificateService.generateCertificatePdf(enrollment.getId());
+                        enrollment.setCertificateUrl(certificateUrl);
+                        // Optional: set certificateId if needed
+                        // enrollment.setCertificateId("CERT-" + enrollment.getId());
+                    }
+
+                    // Notify student (reuse existing type to avoid enum mismatch)
+                    try {
+                        notificationService.createNotification(
+                            enrollment.getStudent().getId(),
+                            "Hoàn thành khóa học",
+                            "Bạn đã hoàn thành khóa học: " + enrollment.getCourse().getTitle() + ". Chứng chỉ đã sẵn sàng.",
+                            Notification.NotificationType.COURSE_ENROLLMENT,
+                            "/profile/certificates",
+                            "Xem chứng chỉ"
+                        );
+                    } catch (Exception ignored) {}
                 }
             }
         }
@@ -289,6 +313,13 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     @Override
     public String generateCertificate(Long enrollmentId) {
         return certificateService.generateCertificatePdf(enrollmentId);
+    }
+
+    @Override
+    public Page<EnrollmentResponse> getMyCertificates(Long studentId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Enrollment> completed = enrollmentRepository.findByStudentIdAndIsCompletedTrue(studentId, pageable);
+        return completed.map(this::mapToResponse);
     }
 
     // Helper methods
