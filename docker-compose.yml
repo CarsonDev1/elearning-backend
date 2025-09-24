@@ -67,8 +67,8 @@ services:
             # Email
             SPRING_MAIL_HOST: smtp.gmail.com
             SPRING_MAIL_PORT: 587
-            SPRING_MAIL_USERNAME: carsonpro21@gmail.com
-            SPRING_MAIL_PASSWORD: lqqtxeubbmhipdon
+            SPRING_MAIL_USERNAME: hieundde160115@fpt.edu.vn
+            SPRING_MAIL_PASSWORD: doiwzymkdfeodddx
             SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: 'true'
             SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: 'true'
             # Application
